@@ -99,7 +99,7 @@ export default function TeachingPanel() {
             </button>
             <button
               onClick={continueTeaching}
-              className="bg-gradient-to-r from-[#d9a05b] to-[#c18d2f] dark:bg-[#FDE047] text-[#0f172a] p-5 rounded-[2rem] hover:brightness-110 flex justify-center gap-3 font-black text-[11px] tracking-widest items-center transition-all active:scale-95 shadow-md dark:shadow-[0_20px_40px_rgba(253,224,71,0.15)]"
+              className="bg-gradient-to-r from-[#d9a05b] to-[#c18d2f] text-[#0f172a] p-5 rounded-[2rem] hover:brightness-110 flex justify-center gap-3 font-black text-[11px] tracking-widest items-center transition-all active:scale-95 shadow-md"
             >
               GO AHEAD <ChevronRight size={16} />
             </button>

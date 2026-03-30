@@ -134,30 +134,6 @@ function BlockEditor({ block, idx, total, onChange, onDelete, onMove }) {
             {/* Audio Upload */}
             <AudioUploader block={block} onChange={onChange} />
 
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label>Step Index</Label>
-                <input
-                  type="number"
-                  min={0}
-                  value={block.teachingScript?.step ?? 0}
-                  onChange={e => setScript('step', Number(e.target.value))}
-                  className="w-full bg-[#161b2e] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-slate-300 outline-none focus:ring-2 focus:ring-violet-500/30"
-                />
-              </div>
-              <div>
-                <Label>Duration (ms) {block.teachingScript?.audioUrl ? <span className="text-violet-400 normal-case font-normal ml-1">← set by audio</span> : ''}</Label>
-                <input
-                  type="number"
-                  min={500}
-                  step={500}
-                  value={block.teachingScript?.duration ?? 3000}
-                  onChange={e => setScript('duration', Number(e.target.value))}
-                  disabled={!!block.teachingScript?.audioUrl}
-                  className="w-full bg-[#161b2e] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-slate-300 outline-none focus:ring-2 focus:ring-violet-500/30 disabled:opacity-40"
-                />
-              </div>
-            </div>
           </div>
         </div>
       )}

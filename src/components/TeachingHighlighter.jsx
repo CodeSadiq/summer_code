@@ -22,7 +22,9 @@ export default function TeachingHighlighter({ children, stepIndex, hasCodeBlock,
       ref={blockRef}
       className={clsx(
         "relative transition-all duration-700 w-full rounded-2xl",
-        isCurrentBlock && !hasCodeBlock ? "bg-cyan-400/10 backdrop-blur-md shadow-[0_0_30px_rgba(34,211,238,0.1)]" : "bg-transparent",
+        isCurrentBlock && !hasCodeBlock
+          ? "bg-cyan-400/5 dark:bg-cyan-400/10 shadow-[0_0_20px_rgba(34,211,238,0.06)]"
+          : "bg-transparent",
         isCurrentBlock ? "px-6 -mx-6 py-4 -my-2" : ""
       )}
     >

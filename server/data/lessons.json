@@ -19,6 +19,35 @@
           "audioUrl": "http://localhost:5000/audio/audio-1774893727112-z4fd4.mp3",
           "uploadedName": "audio-1774893727112-z4fd4.mp3"
         }
+      },
+      {
+        "id": "block-1774904458469-w5rda",
+        "type": "highlightable_text",
+        "visibleText": "HTML ka full form hai HyperText Markup Language.\nYe ek markup language hai jo webpages ka structure banane ke liye use hoti hai.",
+        "teachingScript": {
+          "step": 1,
+          "transcript": "HTML ka full form hai HyperText Markup Language.\nYe ek markup language hai jo webpages ka structure banane ke liye use hoti hai.",
+          "action": "speak",
+          "duration": 7132,
+          "audioUrl": "http://localhost:5000/audio/audio-1774904671774-ej6to.mp3",
+          "fileName": "para 2.mp3",
+          "uploadedName": "audio-1774904671774-ej6to.mp3"
+        }
+      },
+      {
+        "id": "block-1774905427932-m5vvl",
+        "type": "code",
+        "visibleText": "<p>This is a paragraph</p>",
+        "language": "html",
+        "teachingScript": {
+          "step": 2,
+          "transcript": "Chaliye samajhte hain.\nYahan humne paragraph likha hai.\nAngular bracket P angular bracket se paragraph start hota hai,\naur angular bracket slash P angular bracket se end hota hai.\nBeech ka jo text hai, wahi screen par dikhai deta hai.",
+          "action": "speak",
+          "duration": 11834,
+          "audioUrl": "http://localhost:5000/audio/audio-1774905682558-trdlx.mp3",
+          "fileName": "para 3.mp3",
+          "uploadedName": "audio-1774905682558-trdlx.mp3"
+        }
       }
     ]
   }

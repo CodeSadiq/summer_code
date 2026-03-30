@@ -85,21 +85,21 @@ export default function CodeBlock({ visibleText, language, stepIndex }) {
   };
 
   return (
-    <div className="flex flex-col xl:flex-row rounded-3xl overflow-hidden glass-panel my-10 w-full border-[#FDE047]/10 shadow-[0_30px_60px_rgba(0,0,0,0.4)]">
+    <div className="flex flex-col xl:flex-row rounded-3xl overflow-hidden glass-panel my-10 w-full border-[#dcb46e]/20 shadow-[0_30px_60px_rgba(0,0,0,0.4)]">
       {/* Editor Side */}
-      <div className="flex-1 bg-[#0d1117]/80 flex flex-col min-w-0 border-r border-[#30363d]/50 backdrop-blur-xl">
-        <div className="h-14 bg-[#161b22]/50 flex items-center px-6 justify-between border-b border-[#30363d]/50">
+      <div className="flex-1 bg-white/60 dark:bg-[#0d1117]/80 flex flex-col min-w-0 border-r border-slate-200 dark:border-[#30363d]/50 backdrop-blur-xl">
+        <div className="h-14 bg-slate-50/80 dark:bg-[#161b22]/50 flex items-center px-6 justify-between border-b border-slate-200 dark:border-[#30363d]/50">
           <div className="flex gap-2">
             <div className="w-2.5 h-2.5 rounded-full bg-[#ff5f56] shadow-[0_0_8px_rgba(255,95,86,0.4)]"></div>
             <div className="w-2.5 h-2.5 rounded-full bg-[#ffbd2e] shadow-[0_0_8px_rgba(255,189,46,0.4)]"></div>
             <div className="w-2.5 h-2.5 rounded-full bg-[#27c93f] shadow-[0_0_8px_rgba(39,201,63,0.4)]"></div>
           </div>
           <span className="text-[10px] text-slate-500 font-mono tracking-widest uppercase font-black">EDITOR.{language}</span>
-          <button onClick={handleReset} title="Reset Code" className="text-slate-500 hover:text-white transition-colors group">
+          <button onClick={handleReset} title="Reset Code" className="text-slate-400 hover:text-slate-700 dark:text-slate-500 dark:hover:text-white transition-colors group">
             <RotateCcw size={14} className="group-active:-rotate-180 transition-transform duration-500" />
           </button>
         </div>
-        <div className="flex-1 overflow-auto bg-[#0d1117] p-4 text-sm font-mono relative group">
+        <div className="flex-1 overflow-auto bg-white/40 dark:bg-[#0d1117] p-4 text-sm font-mono relative group">
            {isReadOnly && <div className="absolute inset-0 z-10 cursor-not-allowed"></div>}
            {React.createElement(Editor.default || Editor, {
              value: code,
@@ -116,37 +116,54 @@ export default function CodeBlock({ visibleText, language, stepIndex }) {
                minHeight: '200px'
              },
              readOnly: isReadOnly,
-             className: "text-slate-100 placeholder-slate-600",
+             className: "text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-600",
              placeholder: `Write some ${language} code...`
            })}
         </div>
       </div>
 
       {/* Preview Side */}
-      <div className="flex-1 bg-[#020617]/50 flex flex-col min-w-0 backdrop-blur-xl">
-        <div className="h-14 border-b border-[#30363d]/50 flex items-center justify-between px-6 bg-[#161b22]/30">
+      <div className="flex-1 bg-slate-50/50 dark:bg-[#020617]/50 flex flex-col min-w-0 backdrop-blur-xl">
+        <div className="h-14 border-b border-slate-200 dark:border-[#30363d]/50 flex items-center justify-between px-6 bg-white/50 dark:bg-[#161b22]/30">
           <div className="flex items-center gap-2.5 text-[10px] font-black text-slate-500 tracking-widest uppercase">
             <span className="w-2 h-2 rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.6)]"></span>
             Preview Output
           </div>
           <button 
             onClick={handleRun}
-            className="flex items-center gap-2 bg-[#FDE047] hover:bg-[#ffe875] text-[#0f172a] px-5 py-2 rounded-full text-[10px] font-black transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_0_20px_rgba(253,224,71,0.2)] active:scale-95 uppercase tracking-widest"
+            className="flex items-center gap-2 bg-gradient-to-r from-[#dcb46e] to-[#c18d30] text-[#0f172a] hover:brightness-110 px-5 py-2 rounded-full text-[10px] font-black transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-[#dcb46e]/20 active:scale-95 uppercase tracking-widest"
           >
             <Play size={12} fill="currentColor" /> RUN CODE
           </button>
         </div>
-        <div className="flex-1 p-6 bg-[#020617]/80 min-h-[300px] relative">
+        <div className="flex-1 p-6 bg-white/60 dark:bg-[#020617]/80 min-h-[300px] relative">
            {!hasRun ? (
              <div className="flex items-center justify-center h-full text-slate-600 text-[10px] font-black uppercase tracking-[0.2em] italic">
                 Waiting for script execution...
              </div>
            ) : (
              <iframe 
-               srcDoc={output}
+               srcDoc={`
+                 <html>
+                   <head>
+                     <style>
+                       body { 
+                         margin: 0; 
+                         padding: 1rem; 
+                         color: #0f172a; 
+                         font-family: system-ui, -apple-system, sans-serif;
+                       }
+                       @media (prefers-color-scheme: dark) {
+                         body { color: #f8fafc; }
+                       }
+                     </style>
+                   </head>
+                   <body>${output}</body>
+                 </html>
+               `}
                title="preview"
-               sandbox="allow-scripts"
-               className="w-full h-full border-0"
+               sandbox="allow-scripts allow-modals"
+               className="w-full h-full border-0 rounded-b-2xl"
              />
            )}
         </div>

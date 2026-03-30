@@ -15,7 +15,7 @@ export default function Sidebar({ collapsed, setCollapsed }) {
 
   return (
     <aside className={clsx(
-      "bg-white dark:bg-[#0f172a]/80 backdrop-blur-2xl text-slate-600 min-h-[calc(100vh-64px)] hidden md:flex flex-col fixed left-0 top-16 z-30 transition-all duration-700 ease-in-out select-none border-r border-[#dcb46e]/40 dark:border-[#FDE047]/20",
+      "bg-white dark:bg-[#0f172a]/80 backdrop-blur-2xl text-slate-600 min-h-[calc(100vh-64px)] hidden md:flex flex-col fixed left-0 top-16 z-30 transition-all duration-700 ease-in-out select-none border-r border-[#dcb46e]/40 dark:border-[#dcb46e]/20",
       collapsed ? "w-16" : "w-[260px]"
     )}>
       <div className="flex-1 overflow-y-auto">

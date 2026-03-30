@@ -33,7 +33,7 @@ export default function LandingPage() {
 
         <div className="flex items-center gap-6">
            <button className="text-[10px] font-black text-slate-700 dark:text-white hover:text-slate-900 dark:hover:text-cyan-400 uppercase tracking-widest transition-all px-4">Sign In</button>
-           <Link to="/lessons/html-introduction" className="px-10 py-2.5 rounded-full text-[10px] font-black text-[#0f172a] bg-[#FDE047] hover:bg-[#ffe875] dark:shadow-[0_0_15px_rgba(253,224,71,0.2)] hover:shadow-md transition-all active:scale-95 uppercase tracking-[0.25em]">
+           <Link to="/lessons/html-introduction" className="px-10 py-2.5 rounded-full text-[10px] font-black text-white bg-gradient-to-r from-[#dcb46e] to-[#c18d30] hover:brightness-110 hover:shadow-md shadow-[#dcb46e]/20 transition-all active:scale-95 uppercase tracking-[0.25em]">
               Get Started
            </Link>
         </div>
@@ -137,7 +137,7 @@ export default function LandingPage() {
                <div className="w-16 h-16 bg-cyan-50 dark:bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 rounded-2xl flex items-center justify-center mb-12 transition-all group-hover:scale-110 duration-700 dark:shadow-[0_0_15px_rgba(34,211,238,0.2)]">
                   <Code2 size={32} />
                </div>
-               <span className="absolute top-12 right-12 bg-[#FDE047] text-[#0f172a] text-[9px] font-black px-5 py-2 rounded-full uppercase tracking-widest shadow-sm">Active</span>
+               <span className="absolute top-12 right-12 bg-gradient-to-r from-[#dcb46e] to-[#c18d30] text-white text-[9px] font-black px-5 py-2 rounded-full uppercase tracking-widest shadow-sm">Active</span>
                <h3 className="text-4xl font-black text-slate-800 dark:text-white mb-6 tracking-tighter leading-none">HTML <br/> Modern Basics</h3>
                <p className="text-base text-slate-600 dark:text-slate-400 font-medium leading-relaxed tracking-tight group-hover:text-slate-800 dark:group-hover:text-slate-200 transition-colors">
                  Learn the architectural foundation of the web with our anti-gravity guided teaching engine.
@@ -146,7 +146,7 @@ export default function LandingPage() {
              
              <div className="flex items-center justify-between pt-12 mt-12 border-t border-slate-200 dark:border-slate-700">
                 <span className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">Enrollment Open</span>
-                <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-[#0f172a] flex items-center justify-center group-hover:bg-[#FDE047] dark:group-hover:bg-[#FDE047] group-hover:text-[#0f172a] transition-all shadow-sm text-slate-600 dark:text-slate-400 group-hover:shadow-[0_0_15px_rgba(253,224,71,0.5)]">
+                <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-[#0f172a] flex items-center justify-center group-hover:bg-gradient-to-br group-hover:from-[#dcb46e] group-hover:to-[#c18d30] dark:group-hover:from-[#dcb46e] dark:group-hover:to-[#c18d30] group-hover:text-white transition-all shadow-sm text-slate-600 dark:text-slate-400 group-hover:shadow-md">
                   <ArrowRight size={20} />
                 </div>
              </div>

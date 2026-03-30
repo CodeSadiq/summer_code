@@ -10,7 +10,7 @@ function KaraokeText({ text, isCurrentStep, isAdminMode }) {
   return (
     <span className={clsx(
       "transition-all duration-300 inline-block",
-      isCurrentStep ? "font-bold text-slate-800 scale-[1.02] origin-left" : "text-slate-500",
+      isCurrentStep ? "scale-[1.02] origin-left" : "",
       isAdminMode && isCurrentStep ? "opacity-0 select-none" : ""
     )}>
       {text}
@@ -27,10 +27,25 @@ export default function LessonPage() {
   const {
     isActive, currentStep, isAdminMode,
     setIsSpeaking, mode, isPaused,
-    setActiveLesson
+    setActiveLesson, continueTeaching, activeLesson
   } = useTeachingState();
 
   const audioRef = useRef(null);
+
+  // Auto-advance to the next block after audio ends.
+  // Stops at code blocks so the user can try them.
+  const autoAdvance = (block) => {
+    if (!isActive) return;
+    const nextIdx = currentStep + 1;
+    if (!activeLesson || nextIdx >= activeLesson.blocks.length) return;
+    const nextBlock = activeLesson.blocks[nextIdx];
+    if (nextBlock?.type === 'code') {
+      // Pause at code blocks — user must try & click Continue
+      return;
+    }
+    // Small delay so the highlight clears before moving
+    setTimeout(() => continueTeaching(), 400);
+  };
 
   useEffect(() => {
     fetch('http://localhost:5000/api/lessons')
@@ -85,13 +100,24 @@ export default function LessonPage() {
       audioRef.current = audio;
       if (!isPaused) {
         audio.play().catch(() => {
-          setTimeout(() => { if (audioRef.current === audio) setIsSpeaking(false); }, script.duration || 3000);
+          setTimeout(() => {
+            if (audioRef.current === audio) {
+              setIsSpeaking(false);
+              autoAdvance(block);
+            }
+          }, script.duration || 3000);
         });
       }
-      audio.addEventListener('ended', () => setIsSpeaking(false));
+      audio.addEventListener('ended', () => {
+        setIsSpeaking(false);
+        autoAdvance(block);
+      });
       audio.addEventListener('error', () => setTimeout(() => setIsSpeaking(false), 2000));
     } else {
-      const timer = setTimeout(() => setIsSpeaking(false), script.duration || 3500);
+      const timer = setTimeout(() => {
+        setIsSpeaking(false);
+        autoAdvance(block);
+      }, script.duration || 3500);
       return () => clearTimeout(timer);
     }
   }, [isActive, mode, currentStep, lesson, isPaused, setIsSpeaking]);
@@ -125,25 +151,18 @@ export default function LessonPage() {
   return (
     <div className="flex flex-col min-h-[calc(100vh-64px)] w-full max-w-5xl px-8 md:px-16 py-16 relative font-sans animate-entrance overflow-hidden">
 
-      {/* Floating Space Particles */}
-      <div className="absolute top-0 right-0 w-2/3 bottom-40 pointer-events-none z-0 overflow-hidden opacity-90 dark:opacity-30">
+      {/* Static Background Particles - beside title area */}
+      <div className="absolute top-12 right-8 w-[220px] h-[260px] pointer-events-none z-0 overflow-hidden">
         {[
-          { text: '<div>', top: '15%', left: '80%', delay: '0s' },
-          { text: '<p>', top: '22%', left: '70%', delay: '0.4s' },
-          { text: '<//>', top: '25%', left: '60%', delay: '0.8s' },
-          { text: '<p>', top: '35%', left: '85%', delay: '1s' },
-          { text: '<p>', top: '55%', left: '70%', delay: '1.2s' },
-          { text: '<br>', top: '65%', left: '90%', delay: '0.5s' },
-          { text: '<div>', top: '75%', left: '60%', delay: '1.5s' },
-          { text: '<p>', top: '70%', left: '75%', delay: '1.8s' },
-          { text: '<p>', top: '65%', left: '80%', delay: '2.5s' },
-          { text: '<br>', top: '85%', left: '85%', delay: '0.8s' },
-          { text: '<br>', top: '88%', left: '75%', delay: '1.1s' },
+          { text: '<div>', top: '8%',  left: '45%', },
+          { text: '<p>',   top: '35%', left: '70%', },
+          { text: '<br>',  top: '60%', left: '30%', },
+          { text: '</>',   top: '82%', left: '58%', },
         ].map((tag, i) => (
-          <div 
-            key={i} 
-            className="absolute font-mono text-[10px] font-bold text-[#b48d53] dark:text-[#854d0e] bg-[#f5efe3] dark:bg-[#fef08a]/60 px-3 py-1.5 rounded-lg shadow-[0_2px_10px_rgba(180,141,83,0.15)] dark:shadow-sm dark:border dark:border-[#fde047]/50 animate-float flex items-center justify-center transform scale-110"
-            style={{ top: tag.top, left: tag.left, animationDelay: tag.delay }}
+          <div
+            key={i}
+            className="absolute font-mono text-[9px] font-bold text-[#b48d53]/30 dark:text-[#fde047]/15 bg-[#f5efe3]/50 dark:bg-[#fef08a]/5 px-2.5 py-1 rounded-md select-none"
+            style={{ top: tag.top, left: tag.left }}
           >
             {tag.text}
           </div>
@@ -158,10 +177,7 @@ export default function LessonPage() {
         )}
 
         {/* Header Section */}
-        <header className={clsx(
-          "mb-20 transition-all duration-700",
-          isActive && currentStep !== 0 ? "opacity-20 blur-[1px]" : "opacity-100"
-        )}>
+        <header className="mb-20">
           <div className="flex flex-col gap-6">
             <span className="text-5xl md:text-7xl font-black text-transparent select-none pb-2 pl-4 dark:pl-0" style={{ WebkitTextStroke: '2px #dcb46e', opacity: 1 }}>
               {String(lesson.chapterOrder || (currentIdx + 1)).padStart(2, '0')}
@@ -187,21 +203,19 @@ export default function LessonPage() {
             const isCurrentBlock = isActive && currentStep === actualStep;
 
             const blockLayoutClass = clsx(
-              "transition-all duration-700",
-              isCurrentBlock ? "translate-x-3 opacity-100" : (isActive ? "opacity-20 blur-[0.5px]" : "opacity-100")
+              "transition-all duration-500",
+              isCurrentBlock ? "scale-[1.01] origin-left" : ""
             );
 
             if (block.type === 'code') {
               return (
                 <div key={block.id} className={blockLayoutClass}>
                   <TeachingHighlighter stepIndex={actualStep} hasCodeBlock={true}>
-                    <div className="rounded-[2rem] overflow-hidden glass-panel">
-                      <CodeBlock
-                        visibleText={block.visibleText}
-                        language={block.language || 'html'}
-                        stepIndex={actualStep}
-                      />
-                    </div>
+                    <CodeBlock
+                      visibleText={block.visibleText}
+                      language={block.language || 'html'}
+                      stepIndex={actualStep}
+                    />
                   </TeachingHighlighter>
                 </div>
               );
@@ -211,8 +225,10 @@ export default function LessonPage() {
               <div key={block.id} className={blockLayoutClass}>
                 <TeachingHighlighter stepIndex={actualStep} hasCodeBlock={false}>
                   <p className={clsx(
-                    "text-sm md:text-base leading-relaxed transition-all duration-700 font-medium tracking-tight",
-                    isCurrentBlock ? "text-slate-800 dark:text-slate-200 font-semibold" : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300"
+                    "text-sm md:text-base leading-relaxed transition-all duration-500 tracking-tight",
+                    isCurrentBlock
+                      ? "text-slate-800 dark:text-white font-bold"
+                      : "text-slate-600 dark:text-slate-400 font-medium"
                   )}>
                     {isAdminMode && isCurrentBlock
                       ? <span className="font-bold text-red-600 border-b-4 border-red-100 pb-1">{block.teachingScript?.transcript}</span>
@@ -227,10 +243,7 @@ export default function LessonPage() {
       </div>
 
       {/* Footer Navigation */}
-      <div className={clsx(
-        "relative z-10 mt-32 pt-12 border-t border-slate-200 flex flex-col md:flex-row justify-between items-center gap-8 pb-12 transition-all duration-700",
-        isActive ? "opacity-20 blur-[1px]" : "opacity-100"
-      )}>
+      <div className="relative z-10 mt-32 pt-12 border-t border-slate-200 dark:border-slate-800 flex flex-col md:flex-row justify-between items-center gap-8 pb-12 transition-all duration-700">
         <div className="flex-1 w-full md:w-auto">
           {prevLesson ? (
             <Link

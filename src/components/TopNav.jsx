@@ -11,7 +11,7 @@ export default function TopNav() {
   const activeTopic = "HTML"; // This should be dynamic based on your current course route
 
   return (
-    <nav className="fixed top-0 left-0 right-0 h-16 bg-[#fafaf9]/90 dark:bg-[#0f172a]/80 backdrop-blur-2xl border-b border-[#eab308]/20 dark:border-[#FDE047]/20 z-[100] flex items-center px-6 md:px-12 justify-between select-none shadow-[0_10px_30px_rgba(0,0,0,0.05)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.5)]">
+    <nav className="fixed top-0 left-0 right-0 h-16 bg-[#fafaf9]/90 dark:bg-[#0f172a]/80 backdrop-blur-2xl border-b border-[#eab308]/20 dark:border-[#dcb46e]/20 z-[100] flex items-center px-6 md:px-12 justify-between select-none shadow-[0_10px_30px_rgba(0,0,0,0.05)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.5)]">
       <div className="flex items-center gap-10">
         <Link to="/" className="flex items-center gap-3 transition-transform hover:-translate-y-0.5 duration-300 active:scale-95 group">
           <div className="w-10 h-10 rounded-[14px] glass-panel bg-white dark:bg-transparent border border-slate-200 dark:border-white/10 flex items-center justify-center p-2.5">
@@ -25,7 +25,7 @@ export default function TopNav() {
             <button key={topic} className={clsx(
               "px-5 py-2 rounded-xl text-[10px] font-black tracking-widest uppercase transition-all duration-500 relative z-10",
               topic === activeTopic 
-                ? 'bg-gradient-to-r from-[#dcb46e] to-[#c18d30] dark:from-[#FDE047] dark:to-[#eab308] text-[#0f172a] shadow-md dark:shadow-[0_0_15px_rgba(253,224,71,0.3)]' 
+                ? 'bg-gradient-to-r from-[#dcb46e] to-[#c18d30] text-[#0f172a] shadow-md shadow-[#dcb46e]/20' 
                 : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white hover:-translate-y-0.5'
             )}>
               {topic}
@@ -45,7 +45,7 @@ export default function TopNav() {
           </button>
         )}
         
-        <button className="px-8 py-2.5 rounded-full text-[10px] font-black text-slate-700 dark:text-[#FDE047]/80 bg-transparent border border-slate-300 dark:border-[#FDE047]/20 hover:border-slate-400 dark:hover:border-[#FDE047]/40 hover:bg-slate-50 dark:hover:bg-transparent dark:hover:text-[#FDE047] transition-all active:scale-95 uppercase tracking-[0.1em] shadow-sm">
+        <button className="px-8 py-2.5 rounded-full text-[10px] font-black text-slate-700 dark:text-[#dcb46e]/80 bg-transparent border border-slate-300 dark:border-[#dcb46e]/20 hover:border-slate-400 dark:hover:border-[#dcb46e]/40 hover:bg-slate-50 dark:hover:bg-transparent dark:hover:text-[#dcb46e] transition-all active:scale-95 uppercase tracking-[0.1em] shadow-sm">
           Login
         </button>
       </div>
