@@ -21,9 +21,9 @@ export default function TeachingHighlighter({ children, stepIndex, hasCodeBlock,
     <div 
       ref={blockRef}
       className={clsx(
-        "relative transition-all duration-500 w-full rounded-2xl",
-        isCurrentBlock && !hasCodeBlock ? "bg-emerald-50 shadow-[0_15px_40px_rgba(16,185,129,0.04)]" : "bg-transparent",
-        isCurrentBlock ? "px-4 -mx-4 py-3 -my-1" : ""
+        "relative transition-all duration-700 w-full rounded-2xl",
+        isCurrentBlock && !hasCodeBlock ? "bg-cyan-400/10 backdrop-blur-md shadow-[0_0_30px_rgba(34,211,238,0.1)]" : "bg-transparent",
+        isCurrentBlock ? "px-6 -mx-6 py-4 -my-2" : ""
       )}
     >
       {children}

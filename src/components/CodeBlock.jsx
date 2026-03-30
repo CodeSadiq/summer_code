@@ -85,18 +85,18 @@ export default function CodeBlock({ visibleText, language, stepIndex }) {
   };
 
   return (
-    <div className="flex flex-col xl:flex-row rounded-2xl overflow-hidden border shadow-lg my-8 w-full">
+    <div className="flex flex-col xl:flex-row rounded-3xl overflow-hidden glass-panel my-10 w-full border-[#FDE047]/10 shadow-[0_30px_60px_rgba(0,0,0,0.4)]">
       {/* Editor Side */}
-      <div className="flex-1 bg-[#0d1117] flex flex-col min-w-0 border-r border-[#30363d]">
-        <div className="h-12 bg-[#161b22] flex items-center px-4 justify-between border-b border-[#30363d]">
+      <div className="flex-1 bg-[#0d1117]/80 flex flex-col min-w-0 border-r border-[#30363d]/50 backdrop-blur-xl">
+        <div className="h-14 bg-[#161b22]/50 flex items-center px-6 justify-between border-b border-[#30363d]/50">
           <div className="flex gap-2">
-            <div className="w-3 h-3 rounded-full bg-red-500"></div>
-            <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
-            <div className="w-3 h-3 rounded-full bg-green-500"></div>
+            <div className="w-2.5 h-2.5 rounded-full bg-[#ff5f56] shadow-[0_0_8px_rgba(255,95,86,0.4)]"></div>
+            <div className="w-2.5 h-2.5 rounded-full bg-[#ffbd2e] shadow-[0_0_8px_rgba(255,189,46,0.4)]"></div>
+            <div className="w-2.5 h-2.5 rounded-full bg-[#27c93f] shadow-[0_0_8px_rgba(39,201,63,0.4)]"></div>
           </div>
-          <span className="text-xs text-slate-400 font-mono tracking-widest uppercase">EDITOR.{language}</span>
-          <button onClick={handleReset} title="Reset Code" className="text-slate-400 hover:text-white transition-colors group">
-            <RotateCcw size={14} className="group-active:-rotate-180 transition-transform duration-300" />
+          <span className="text-[10px] text-slate-500 font-mono tracking-widest uppercase font-black">EDITOR.{language}</span>
+          <button onClick={handleReset} title="Reset Code" className="text-slate-500 hover:text-white transition-colors group">
+            <RotateCcw size={14} className="group-active:-rotate-180 transition-transform duration-500" />
           </button>
         </div>
         <div className="flex-1 overflow-auto bg-[#0d1117] p-4 text-sm font-mono relative group">
@@ -123,23 +123,23 @@ export default function CodeBlock({ visibleText, language, stepIndex }) {
       </div>
 
       {/* Preview Side */}
-      <div className="flex-1 bg-white flex flex-col min-w-0">
-        <div className="h-12 border-b flex items-center justify-between px-4 bg-slate-50">
-          <div className="flex items-center gap-2 text-xs font-bold text-slate-400 tracking-widest uppercase">
-            <span className="w-2 h-2 rounded-full bg-blue-500"></span>
-            Preview
+      <div className="flex-1 bg-[#020617]/50 flex flex-col min-w-0 backdrop-blur-xl">
+        <div className="h-14 border-b border-[#30363d]/50 flex items-center justify-between px-6 bg-[#161b22]/30">
+          <div className="flex items-center gap-2.5 text-[10px] font-black text-slate-500 tracking-widest uppercase">
+            <span className="w-2 h-2 rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.6)]"></span>
+            Preview Output
           </div>
           <button 
             onClick={handleRun}
-            className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 rounded-full text-xs font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center gap-2 bg-[#FDE047] hover:bg-[#ffe875] text-[#0f172a] px-5 py-2 rounded-full text-[10px] font-black transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_0_20px_rgba(253,224,71,0.2)] active:scale-95 uppercase tracking-widest"
           >
             <Play size={12} fill="currentColor" /> RUN CODE
           </button>
         </div>
-        <div className="flex-1 p-4 bg-white min-h-[250px] relative">
+        <div className="flex-1 p-6 bg-[#020617]/80 min-h-[300px] relative">
            {!hasRun ? (
-             <div className="flex items-center justify-center h-full text-slate-400 text-sm font-medium">
-                Waiting for run...
+             <div className="flex items-center justify-center h-full text-slate-600 text-[10px] font-black uppercase tracking-[0.2em] italic">
+                Waiting for script execution...
              </div>
            ) : (
              <iframe 
