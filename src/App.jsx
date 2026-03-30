@@ -1,0 +1,26 @@
+import React from 'react';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { TeachingProvider } from './contexts/TeachingContext';
+import MainLayout from './components/MainLayout';
+import LandingPage from './pages/LandingPage';
+import LessonPage from './pages/LessonPage';
+import AdminPage from './pages/AdminPage';
+import AdminLessonEditor from './pages/AdminLessonEditor';
+
+function App() {
+  return (
+    <TeachingProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/lessons/:slug" element={<MainLayout><LessonPage /></MainLayout>} />
+          {/* Admin routes */}
+          <Route path="/admin" element={<AdminPage />} />
+          <Route path="/admin/lesson/:slug" element={<AdminLessonEditor />} />
+        </Routes>
+      </BrowserRouter>
+    </TeachingProvider>
+  );
+}
+
+export default App;

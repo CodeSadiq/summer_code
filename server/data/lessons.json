@@ -1,0 +1,25 @@
+[
+  {
+    "id": "html-introduction",
+    "slug": "html-introduction",
+    "title": "HTML Introduction",
+    "description": "",
+    "chapterOrder": 1,
+    "blocks": [
+      {
+        "id": "block-1774892105206-jodn5",
+        "type": "heading",
+        "visibleText": "HTML Introduction",
+        "teachingScript": {
+          "step": 0,
+          "transcript": "Toh chaliye shuru karte hain HTML ka introduction.\nAgar aap web development seekhna chahte ho, toh HTML sabse pehla aur basic step hota hai.",
+          "action": "speak",
+          "duration": 7785,
+          "fileName": "html intro.mp3",
+          "audioUrl": "http://localhost:5000/audio/audio-1774893727112-z4fd4.mp3",
+          "uploadedName": "audio-1774893727112-z4fd4.mp3"
+        }
+      }
+    ]
+  }
+]
