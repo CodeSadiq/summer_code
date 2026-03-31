@@ -50,5 +50,25 @@
         }
       }
     ]
+  },
+  {
+    "id": "html-element",
+    "slug": "html-element",
+    "title": "HTML Element",
+    "description": "",
+    "chapterOrder": 1,
+    "blocks": [
+      {
+        "id": "block-1774932092021-jiuqi",
+        "type": "heading",
+        "visibleText": "HTML Element",
+        "teachingScript": {
+          "step": 0,
+          "transcript": "",
+          "action": "speak",
+          "duration": 3000
+        }
+      }
+    ]
   }
 ]

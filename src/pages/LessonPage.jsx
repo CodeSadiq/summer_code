@@ -149,7 +149,7 @@ export default function LessonPage() {
   if (!lesson && !loading) return <div className="p-12 text-center text-red-500 font-bold">Lesson not found</div>;
 
   return (
-    <div className="flex flex-col min-h-[calc(100vh-64px)] w-full max-w-5xl px-8 md:px-16 py-16 relative font-sans animate-entrance overflow-hidden">
+    <div className="flex flex-col min-h-[calc(100vh-64px)] w-full max-w-5xl px-12 py-16 relative font-sans animate-entrance overflow-hidden">
 
       {/* Static Background Particles - beside title area */}
       <div className="absolute top-12 right-8 w-[220px] h-[260px] pointer-events-none z-0 overflow-hidden">

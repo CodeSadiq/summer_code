@@ -9,133 +9,139 @@ export default function TeachingPanel() {
     stopTeaching, togglePause, isPaused, continueTeaching, explainLastTopic
   } = useTeachingState();
 
-  if (!isActive) return null;
-
   const getStatusText = () => {
     switch (mode) {
-      case 'EXPLAINING': return "Analyzing the topic now...";
+      case 'EXPLAINING': return "Explaining the topic...";
       case 'BOT_CODING': return "I am writing the code...";
-      case 'AT_CODE_BLOCK': return showContinueButton ? "AB AAP TRY KARO" : "Wait for instruction";
+      case 'AT_CODE_BLOCK': return showContinueButton ? "Your turn to try!" : "Wait for instruction";
       case 'USER_TRYING': return userHasRun ? "Great! Now run the code." : "Try editing then click Run!";
       default: return "Ready to start teaching!";
     }
   };
 
   return (
-    <aside className={clsx(
-      "fixed top-16 right-0 w-full md:w-[380px] h-[calc(100vh-64px)] z-50 flex flex-col transition-all duration-700 ease-in-out",
-      isActive ? "translate-x-0" : "translate-x-full"
-    )}>
-      {/* Inner Engine Card */}
-      <div className="flex-1 mx-6 mt-8 mb-4 rounded-[2.5rem] border border-[#dcb46e]/60 dark:border-white/10 flex flex-col bg-gradient-to-b from-cyan-50/80 dark:from-[#0f172a]/95 to-transparent dark:bg-[#020617]/50 shadow-[0_10px_30px_rgba(0,0,0,0.02)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.5)] overflow-hidden relative backdrop-blur-md">
-        
-        {/* Label Header */}
-        <div className="pt-8 pb-6 text-center border-b border-cyan-100/50 dark:border-white/5 bg-cyan-50/30 dark:bg-white/5">
-          <span className="text-[10px] font-black tracking-[0.4em] text-slate-800 dark:text-slate-400 uppercase select-none">
-            Teaching Engine Active
+    <aside
+      className={clsx(
+        "fixed top-16 right-0 w-full md:w-[300px] h-[calc(100vh-64px)] z-50",
+        "flex flex-col",
+        isActive ? "pointer-events-auto" : "pointer-events-none"
+      )}
+      style={{
+        transform: isActive ? "translateX(0)" : "translateX(110%)",
+        opacity: isActive ? 1 : 0,
+        transition: "transform 900ms cubic-bezier(0.16, 1, 0.3, 1), opacity 600ms cubic-bezier(0.16, 1, 0.3, 1)",
+        willChange: "transform, opacity",
+      }}
+    >
+      {/* Single unified container */}
+      <div className="w-full flex-1 border-l border-slate-200 dark:border-white/10 bg-white dark:bg-[#0f172a] overflow-hidden flex flex-col">
+
+        {/* Header */}
+        <div className="px-6 pt-6 pb-5 border-b border-slate-100 dark:border-white/5 text-center">
+          <span className="text-[10px] font-black tracking-[0.35em] text-slate-400 dark:text-slate-500 uppercase select-none">
+            Guided Teaching Mode
           </span>
         </div>
 
-        {/* Robot Visuals Area */}
-        <div className="flex-1 flex flex-col items-center justify-center px-10 pb-8">
-          <div className={clsx(
-            "relative w-48 h-48 rounded-full bg-gradient-to-br from-[#1e293b] to-[#020617] flex items-center justify-center transition-all duration-700 shadow-[0_25px_60px_rgba(0,0,0,0.6)] border border-white/5",
-            isSpeaking && "ring-[2px] ring-cyan-400/20 shadow-cyan-400/10",
-          )}>
-            {/* Glowing Eyes */}
-            <div className="flex gap-7 absolute top-[38%]">
-              <div className={clsx(
-                "w-2.5 bg-cyan-400 rounded-full transition-all duration-300 shadow-[0_0_15px_rgba(34,211,238,0.8)]",
-                isSpeaking ? "h-8" : "h-3.5"
-              )} />
-              <div className={clsx(
-                "w-2.5 bg-cyan-400 rounded-full transition-all duration-300 shadow-[0_0_15px_rgba(34,211,238,0.8)]",
-                isSpeaking ? "h-8" : "h-3.5"
-              )} />
-            </div>
+        {/* Bot face */}
+        <div className="flex-1 flex flex-col items-center justify-center py-8 gap-5">
+          {/* Outer ring */}
+          <div className="rounded-full p-[5px] bg-slate-100 dark:bg-white/5">
+            <div className="relative w-36 h-36 rounded-full bg-gradient-to-br from-[#162032] to-[#0b1520] flex items-center justify-center">
 
-            {/* Visualizer Mouth */}
-            <div className="absolute bottom-[22%] flex gap-2 items-center h-5">
-              {[1, 2, 3, 4, 5].map((bar) => (
-                <div
-                  key={bar}
-                  className={clsx(
-                    "w-1 bg-cyan-400/30 rounded-full transition-all duration-150",
-                    isSpeaking ? "animate-wave h-5 bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.4)]" : "h-0.5"
-                  )}
-                  style={isSpeaking ? { animationDelay: `${bar * 0.1}s` } : {}}
-                />
-              ))}
+              {/* Eyes */}
+              <div className="flex gap-6 absolute top-[34%]">
+                <div className="w-[11px] h-7 rounded-full bg-emerald-400" />
+                <div className="w-[11px] h-7 rounded-full bg-emerald-400" />
+              </div>
+
+              {/* Mouth dots */}
+              <div className="absolute bottom-[27%] flex items-center gap-[5px]">
+                {[0, 0.2, 0.4, 0.2, 0].map((delay, i) => (
+                  <div
+                    key={i}
+                    className="w-[4px] h-[4px] rounded-full bg-emerald-400/70"
+                    style={{
+                      animation: isSpeaking
+                        ? `dot-pulse 1.6s ease-in-out ${delay}s infinite`
+                        : 'none',
+                      animationPlayState: isPaused ? 'paused' : 'running',
+                    }}
+                  />
+                ))}
+              </div>
+
             </div>
           </div>
 
-          <div className="mt-14 text-center max-w-[260px] px-6">
-            <p className="text-[13px] font-semibold text-slate-700 dark:text-slate-300 italic tracking-tight leading-relaxed animate-entrance drop-shadow-sm">
-              "{getStatusText()}"
-            </p>
-          </div>
+          {/* Status text */}
+          <p className="text-[13px] font-medium text-slate-500 dark:text-slate-400 italic text-center px-6">
+            "{getStatusText()}"
+          </p>
         </div>
-      </div>
-      {/* End of Inner Card */}
 
-      {/* Controls Area - Perfectly Formatted Buttons */}
-      <div className="px-6 pb-8 flex flex-col gap-4">
+        {/* Controls */}
+        <div className="px-5 pb-6 flex flex-col gap-3 border-t border-slate-100 dark:border-white/5 pt-5">
 
-        {/* State-aware Instruction Bar */}
-        {mode === 'AT_CODE_BLOCK' && !showContinueButton && (
-          <div className="w-full py-5 bg-[#1e293b]/5 dark:bg-[#1e293b]/50 border border-slate-200 dark:border-white/5 text-slate-500 dark:text-slate-400 font-black rounded-[2rem] flex justify-center items-center gap-3 text-[11px] tracking-[0.3em] uppercase shadow-inner">
-            <span className="w-1.5 h-1.5 rounded-full bg-cyan-500 shadow-[0_0_8px_cyan] animate-pulse" />
-            AB AAP TRY KARO
-          </div>
-        )}
+          {/* Wait state */}
+          {mode === 'AT_CODE_BLOCK' && !showContinueButton && (
+            <div className="w-full py-4 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/5 text-slate-500 dark:text-slate-400 font-semibold rounded-2xl flex justify-center items-center gap-2 text-[11px] tracking-widest uppercase">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              Your turn to try
+            </div>
+          )}
 
-        {mode === 'AT_CODE_BLOCK' && showContinueButton && (
-          <div className="flex flex-col gap-4">
-            <button
-              onClick={explainLastTopic}
-              className="bg-white dark:bg-white/5 border border-slate-300 dark:border-white/5 text-slate-700 dark:text-white p-5 rounded-[2rem] hover:bg-slate-50 dark:hover:bg-white/10 flex justify-center gap-3 font-black text-[11px] tracking-widest items-center transition-all active:scale-95 shadow-sm"
-            >
-              <RotateCcw size={16} /> EXPLAIN AGAIN
-            </button>
+          {/* Code block actions */}
+          {mode === 'AT_CODE_BLOCK' && showContinueButton && (
+            <div className="flex flex-col gap-2">
+              <button
+                onClick={explainLastTopic}
+                className="w-full py-3.5 rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-slate-700 dark:text-white text-[11px] font-bold tracking-widest uppercase flex items-center justify-center gap-2 hover:bg-slate-50 dark:hover:bg-white/10 transition-all active:scale-95"
+              >
+                <RotateCcw size={13} /> Explain Again
+              </button>
+              <button
+                onClick={continueTeaching}
+                className="w-full py-3.5 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-white text-[11px] font-bold tracking-widest uppercase flex items-center justify-center gap-2 transition-all active:scale-95 shadow-sm"
+              >
+                Go Ahead <ChevronRight size={14} />
+              </button>
+            </div>
+          )}
+
+          {/* Continue after user tried */}
+          {mode === 'USER_TRYING' && userHasRun && (
             <button
               onClick={continueTeaching}
-              className="bg-gradient-to-r from-[#d9a05b] to-[#c18d2f] text-[#0f172a] p-5 rounded-[2rem] hover:brightness-110 flex justify-center gap-3 font-black text-[11px] tracking-widest items-center transition-all active:scale-95 shadow-md"
+              className="w-full py-3.5 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-white text-[11px] font-bold tracking-widest uppercase flex items-center justify-center gap-2 transition-all active:scale-95 shadow-sm"
             >
-              GO AHEAD <ChevronRight size={16} />
+              Continue <ChevronRight size={14} />
+            </button>
+          )}
+
+          {/* Pause / Stop row */}
+          <div className="flex gap-2 h-12">
+            <button
+              onClick={togglePause}
+              className={clsx(
+                "flex-1 rounded-2xl flex items-center justify-center gap-2 text-[11px] font-bold tracking-widest uppercase transition-all active:scale-95 border",
+                isPaused
+                  ? "bg-white dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-300 hover:bg-slate-50"
+                  : "bg-gradient-to-b from-[#dcb46e] to-[#c18d30] border-transparent text-[#0f172a] hover:brightness-110"
+              )}
+            >
+              {isPaused ? <Play size={13} fill="currentColor" /> : <Pause size={13} fill="currentColor" />}
+              {isPaused ? "Resume" : "Pause"}
+            </button>
+
+            <button
+              onClick={stopTeaching}
+              className="w-12 rounded-2xl bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 flex items-center justify-center hover:bg-red-50 dark:hover:bg-red-500/10 hover:border-red-200 dark:hover:border-red-500/20 transition-all group active:scale-90"
+            >
+              <div className="w-3.5 h-3.5 rounded-sm bg-slate-300 dark:bg-slate-600 group-hover:bg-red-400 transition-colors" />
             </button>
           </div>
-        )}
 
-        {mode === 'USER_TRYING' && userHasRun && (
-          <button
-            onClick={continueTeaching}
-            className="w-full bg-cyan-500 dark:bg-cyan-400 font-black py-5 text-white dark:text-[#0f172a] rounded-[2rem] shadow-md dark:shadow-[0_20px_40px_rgba(34,211,238,0.2)] hover:bg-cyan-400 flex justify-center items-center gap-3 text-[11px] tracking-[0.2em] transition-all active:scale-95"
-          >
-            CONTINUE TEACHING <ChevronRight size={16} />
-          </button>
-        )}
-
-        {/* Persistent Engine Controls */}
-        <div className="flex gap-4 mt-2 h-[54px]">
-          <button
-            onClick={togglePause}
-            className={clsx(
-              "flex-1 rounded-[1.5rem] flex items-center justify-center gap-3 text-[11px] font-black tracking-[0.3em] transition-all active:scale-95 uppercase border",
-              isPaused
-                ? "bg-white dark:bg-slate-800/80 border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 shadow-sm"
-                : "bg-gradient-to-b from-[#dcb46e] to-[#c18d30] dark:from-[#eab308] dark:to-[#a16207] text-[#0f172a] shadow-md border-transparent hover:brightness-110"
-            )}
-          >
-            {isPaused ? <Play size={16} fill="currentColor" /> : <Pause size={16} fill="currentColor" />}
-            <span>{isPaused ? "Resume" : "Pause"}</span>
-          </button>
-
-          <button
-            onClick={stopTeaching}
-            className="w-[54px] bg-white dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-[1.5rem] flex items-center justify-center hover:bg-slate-50 dark:hover:bg-slate-700 transition-all group active:scale-90 shadow-sm"
-          >
-            <div className="w-4 h-4 rounded-[4px] border-2 border-slate-400 dark:border-slate-500 group-hover:bg-slate-300 dark:group-hover:bg-slate-400 group-hover:border-slate-300 dark:group-hover:border-slate-400 transition-all"></div>
-          </button>
         </div>
       </div>
     </aside>

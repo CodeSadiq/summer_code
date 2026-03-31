@@ -17,8 +17,7 @@ export default function MainLayout({ children }) {
         <Sidebar collapsed={isSidebarCollapsed} setCollapsed={setIsSidebarCollapsed} />
         <main className={clsx(
           "flex-1 overflow-y-auto w-full transition-all duration-300",
-          isSidebarCollapsed ? "md:pl-16" : "md:pl-[260px]",
-          isActive ? "pb-[35vh] md:pb-0 md:pr-[380px]" : "pb-0"
+          isSidebarCollapsed ? "md:pl-16" : "md:pl-[240px]"
         )}>
           {children}
         </main>
