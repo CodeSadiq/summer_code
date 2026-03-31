@@ -10,7 +10,7 @@ import 'prismjs/themes/prism-twilight.css'; // Good dark theme
 import { RotateCcw, Play } from 'lucide-react';
 import { useTeachingState } from '../contexts/TeachingContext';
 
-export default function CodeBlock({ visibleText, language, stepIndex }) {
+export default function CodeBlock({ visibleText, language, stepIndex, audioDuration }) {
   const [code, setCode] = useState(visibleText);
   const [output, setOutput] = useState('');
   const [hasRun, setHasRun] = useState(true);
@@ -21,36 +21,64 @@ export default function CodeBlock({ visibleText, language, stepIndex }) {
   } = useTeachingState();
 
   const isCurrentBlock = isActive && currentStep === stepIndex;
-  const isReadOnly = (isCurrentBlock && (mode === 'BOT_CODING' || mode === 'EXPLAINING')) || (!isCurrentBlock && isActive);
+  const isReadOnly = (isCurrentBlock && (mode === 'BOT_CODING' || mode === 'EXPLAINING' || mode === 'EXPLAINING_CODE')) || (!isCurrentBlock && isActive);
 
   // Initialize output
   useEffect(() => {
     setOutput(visibleText);
   }, [visibleText]);
 
-  // Handle Bot Typing Simulation
+  const typingState = useRef({ index: 0, text: '' });
+
+  // Reset typing state when entering a new code block explanation
   useEffect(() => {
-    if (isCurrentBlock && mode === 'BOT_CODING' && !isPaused) {
+    if (isCurrentBlock && mode === 'EXPLAINING_CODE') {
+      typingState.current = { index: 0, text: '' };
       setCode('');
-      const lines = visibleText.split('\n');
-      let currentLine = 0;
+    }
+  }, [isCurrentBlock, mode]);
+
+  // Handle Bot Typing Simulation Resumption & Execution
+  useEffect(() => {
+    let timeoutId;
+    let isTypingActive = true;
+
+    if (isCurrentBlock && mode === 'EXPLAINING_CODE' && !isPaused) {
+      const sourceText = visibleText || '';
+      const chars = sourceText.split('');
       
-      const typeNextLine = () => {
-        if (currentLine < lines.length) {
-          setCode(prev => prev + (prev ? '\n' : '') + lines[currentLine]);
-          currentLine++;
-          setTimeout(typeNextLine, 800);
+      let msPerChar = 30;
+      if (audioDuration && chars.length > 0) {
+        // Reserve 500ms safety buffer so it comfortably finishes just before audio ends
+        const targetMs = Math.max(500, audioDuration - 500);
+        msPerChar = Math.max(5, Math.floor(targetMs / chars.length));
+      }
+
+      const typeNextChar = () => {
+        if (!isTypingActive) return;
+        
+        const state = typingState.current;
+        if (state.index < chars.length) {
+          state.text += chars[state.index] || '';
+          setCode(state.text);
+          setOutput(state.text); // Dynamically update preview while typing
+          state.index++;
+          timeoutId = setTimeout(typeNextChar, msPerChar);
         } else {
           // Done typing
-          setOutput(visibleText);
-          setMode('AT_CODE_BLOCK');
+          setOutput(sourceText);
         }
       };
       
-      const timer = setTimeout(typeNextLine, 800);
-      return () => clearTimeout(timer);
+      // If we are starting fresh, wait 500ms. If resuming from pause, start immediately.
+      timeoutId = setTimeout(typeNextChar, typingState.current.index === 0 ? 500 : msPerChar);
     }
-  }, [isCurrentBlock, mode, visibleText, setMode, isPaused]);
+    
+    return () => {
+      isTypingActive = false;
+      clearTimeout(timeoutId);
+    };
+  }, [isCurrentBlock, mode, visibleText, isPaused, audioDuration]);
 
   // Handle "Go Ahead" Timer visibility
   useEffect(() => {
@@ -83,23 +111,22 @@ export default function CodeBlock({ visibleText, language, stepIndex }) {
     const lg = Prism.languages[language] || Prism.languages.markup;
     return Prism.highlight(codeStr, lg, language);
   };
-
   return (
-    <div className="flex flex-col xl:flex-row rounded-3xl overflow-hidden glass-panel my-10 w-full border-[#dcb46e]/20 shadow-[0_30px_60px_rgba(0,0,0,0.4)]">
+    <div className="grid grid-cols-1 lg:grid-cols-2 lg:gap-0 rounded-2xl border border-slate-200/60 overflow-hidden shadow-2xl shadow-slate-200/50 my-10 w-full">
       {/* Editor Side */}
-      <div className="flex-1 bg-white/60 dark:bg-[#0d1117]/80 flex flex-col min-w-0 border-r border-slate-200 dark:border-[#30363d]/50 backdrop-blur-xl">
-        <div className="h-14 bg-slate-50/80 dark:bg-[#161b22]/50 flex items-center px-6 justify-between border-b border-slate-200 dark:border-[#30363d]/50">
+      <div className="bg-[#0f172a] flex flex-col min-w-0 border-r border-slate-800">
+        <div className="h-12 bg-[#0f172a] flex items-center px-4 justify-between border-b border-slate-800">
           <div className="flex gap-2">
-            <div className="w-2.5 h-2.5 rounded-full bg-[#ff5f56] shadow-[0_0_8px_rgba(255,95,86,0.4)]"></div>
-            <div className="w-2.5 h-2.5 rounded-full bg-[#ffbd2e] shadow-[0_0_8px_rgba(255,189,46,0.4)]"></div>
-            <div className="w-2.5 h-2.5 rounded-full bg-[#27c93f] shadow-[0_0_8px_rgba(39,201,63,0.4)]"></div>
+            <div className="w-3 h-3 rounded-full bg-[#ff5f56]"></div>
+            <div className="w-3 h-3 rounded-full bg-[#ffbd2e]"></div>
+            <div className="w-3 h-3 rounded-full bg-[#27c93f]"></div>
           </div>
-          <span className="text-[10px] text-slate-500 font-mono tracking-widest uppercase font-black">EDITOR.{language}</span>
-          <button onClick={handleReset} title="Reset Code" className="text-slate-400 hover:text-slate-700 dark:text-slate-500 dark:hover:text-white transition-colors group">
-            <RotateCcw size={14} className="group-active:-rotate-180 transition-transform duration-500" />
+          <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">EDITOR.{language}</span>
+          <button onClick={handleReset} title="Reset Code" className="text-slate-500 hover:text-white transition-colors">
+            <RotateCcw size={14} />
           </button>
         </div>
-        <div className="flex-1 overflow-auto bg-white/40 dark:bg-[#0d1117] p-4 text-sm font-mono relative group">
+        <div className="flex-1 overflow-auto p-6 text-sm font-mono relative group text-blue-300 min-h-[300px]">
            {isReadOnly && <div className="absolute inset-0 z-10 cursor-not-allowed"></div>}
            {React.createElement(Editor.default || Editor, {
              value: code,
@@ -108,38 +135,37 @@ export default function CodeBlock({ visibleText, language, stepIndex }) {
                  if(isCurrentBlock && mode === 'AT_CODE_BLOCK') setMode('USER_TRYING');
              },
              highlight: highlightWithPrism,
-             padding: 10,
+             padding: 0,
              textareaClassName: "focus:outline-none",
              style: {
                fontFamily: '"JetBrains Mono", "Fira Code", monospace',
                lineHeight: 1.6,
-               minHeight: '200px'
              },
              readOnly: isReadOnly,
-             className: "text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-600",
+             className: "text-blue-300 w-full h-full",
              placeholder: `Write some ${language} code...`
            })}
         </div>
       </div>
 
       {/* Preview Side */}
-      <div className="flex-1 bg-slate-50/50 dark:bg-[#020617]/50 flex flex-col min-w-0 backdrop-blur-xl">
-        <div className="h-14 border-b border-slate-200 dark:border-[#30363d]/50 flex items-center justify-between px-6 bg-white/50 dark:bg-[#161b22]/30">
-          <div className="flex items-center gap-2.5 text-[10px] font-black text-slate-500 tracking-widest uppercase">
-            <span className="w-2 h-2 rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.6)]"></span>
-            Preview Output
+      <div className="bg-white flex flex-col min-w-0">
+        <div className="h-12 border-b border-slate-100 flex items-center justify-between px-4 bg-white">
+          <div className="flex items-center gap-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+            <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+            Preview
           </div>
           <button 
             onClick={handleRun}
-            className="flex items-center gap-2 bg-gradient-to-r from-[#dcb46e] to-[#c18d30] text-[#0f172a] hover:brightness-110 px-5 py-2 rounded-full text-[10px] font-black transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-[#dcb46e]/20 active:scale-95 uppercase tracking-widest"
+            className="flex items-center gap-2 bg-blue-600 text-white hover:bg-blue-700 px-4 py-1.5 rounded-full text-[10px] font-black transition-colors disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-wider"
           >
             <Play size={12} fill="currentColor" /> RUN CODE
           </button>
         </div>
-        <div className="flex-1 p-6 bg-white/60 dark:bg-[#020617]/80 min-h-[300px] relative">
+        <div className="flex-1 p-6 relative bg-white">
            {!hasRun ? (
-             <div className="flex items-center justify-center h-full text-slate-600 text-[10px] font-black uppercase tracking-[0.2em] italic">
-                Waiting for script execution...
+             <div className="flex items-center justify-center h-full text-slate-400 text-[10px] font-bold uppercase tracking-[0.2em]">
+                Waiting for execution...
              </div>
            ) : (
              <iframe 
@@ -149,12 +175,9 @@ export default function CodeBlock({ visibleText, language, stepIndex }) {
                      <style>
                        body { 
                          margin: 0; 
-                         padding: 1rem; 
+                         padding: 0; 
                          color: #0f172a; 
                          font-family: system-ui, -apple-system, sans-serif;
-                       }
-                       @media (prefers-color-scheme: dark) {
-                         body { color: #f8fafc; }
                        }
                      </style>
                    </head>
@@ -163,7 +186,7 @@ export default function CodeBlock({ visibleText, language, stepIndex }) {
                `}
                title="preview"
                sandbox="allow-scripts allow-modals"
-               className="w-full h-full border-0 rounded-b-2xl"
+               className="w-full h-full border-0"
              />
            )}
         </div>

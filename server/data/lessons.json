@@ -48,6 +48,17 @@
           "fileName": "para 3.mp3",
           "uploadedName": "audio-1774905682558-trdlx.mp3"
         }
+      },
+      {
+        "id": "block-1774984536128-lobkr",
+        "type": "highlightable_text",
+        "visibleText": "HTML tags ke through kaam karta hai.\nHar element ek tag ke andar likha hota hai.",
+        "teachingScript": {
+          "step": 3,
+          "transcript": "HTML tags ke through kaam karta hai.\nHar element ek tag ke andar likha hota hai.",
+          "action": "speak",
+          "duration": 3000
+        }
       }
     ]
   },

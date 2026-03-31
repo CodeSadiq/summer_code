@@ -11,22 +11,22 @@ export default function TopNav() {
   const activeTopic = "HTML"; // This should be dynamic based on your current course route
 
   return (
-    <nav className="fixed top-0 left-0 right-0 h-16 bg-[#fafaf9]/90 dark:bg-[#0f172a]/80 backdrop-blur-2xl border-b border-[#eab308]/20 dark:border-[#dcb46e]/20 z-[100] flex items-center px-6 md:px-12 justify-between select-none shadow-[0_10px_30px_rgba(0,0,0,0.05)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.5)]">
+    <nav className="sticky top-0 z-50 flex items-center justify-between px-6 py-3 bg-white/80 backdrop-blur-md border-b border-slate-200/60 h-16">
       <div className="flex items-center gap-10">
-        <Link to="/" className="flex items-center gap-3 transition-transform hover:-translate-y-0.5 duration-300 active:scale-95 group">
-          <div className="w-10 h-10 rounded-[14px] glass-panel bg-white dark:bg-transparent border border-slate-200 dark:border-white/10 flex items-center justify-center p-2.5">
-            <Code2 className="text-slate-700 dark:text-cyan-400 dark:drop-shadow-[0_0_8px_rgba(34,211,238,0.5)]" size={22} />
+        <Link to="/" className="flex items-center gap-2 group">
+          <div className="bg-blue-600 rounded-lg p-1.5 flex flex-shrink-0">
+            <Code2 className="text-white" size={20} />
           </div>
-          <span className="text-lg font-black text-slate-800 dark:text-white tracking-tighter uppercase tracking-[0.08em] transition-colors">SUMMERCODE</span>
+          <span className="text-xl font-bold text-slate-800 tracking-tight transition-colors group-hover:text-blue-600">SummerCode</span>
         </Link>
         
-        <div className="hidden lg:flex items-center p-1 bg-white dark:bg-[#1e293b]/50 rounded-2xl border border-slate-200 dark:border-white/10 shadow-sm ml-4 relative">
+        <div className="hidden lg:flex items-center gap-1 ml-4">
           {topics.map(topic => (
             <button key={topic} className={clsx(
-              "px-5 py-2 rounded-xl text-[10px] font-black tracking-widest uppercase transition-all duration-500 relative z-10",
+              "px-4 py-1.5 rounded-full text-sm font-medium transition-all",
               topic === activeTopic 
-                ? 'bg-gradient-to-r from-[#dcb46e] to-[#c18d30] text-[#0f172a] shadow-md shadow-[#dcb46e]/20' 
-                : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white hover:-translate-y-0.5'
+                ? 'bg-blue-50 text-blue-700 ring-1 ring-blue-200 shadow-sm' 
+                : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
             )}>
               {topic}
             </button>
@@ -34,20 +34,16 @@ export default function TopNav() {
         </div>
       </div>
 
-      <div className="flex items-center gap-6">
+      <div className="flex items-center gap-4">
         {!isActive && activeLesson && (
           <button 
             onClick={() => startTeaching(activeLesson)}
-            className="flex items-center gap-3 px-8 py-2.5 text-[10px] font-black text-white bg-slate-800 dark:bg-[#1e293b] rounded-full hover:bg-black dark:hover:bg-black active:scale-95 shadow-md shadow-slate-200 dark:shadow-[0_0_15px_rgba(34,211,238,0.2)] transition-all tracking-widest uppercase dark:border dark:border-cyan-500/30"
+            className="flex items-center gap-2 bg-slate-900 hover:bg-slate-800 text-white rounded-full px-5 py-2.5 text-sm font-semibold transition-colors active:scale-95 shadow-sm"
           >
-            <Sparkles size={16} className="text-[#10b981] dark:text-cyan-400" fill="currentColor" />
-            GUIDED TEACHING
+            <Sparkles size={16} className="text-yellow-400" />
+            Start Guided Teaching
           </button>
         )}
-        
-        <button className="px-8 py-2.5 rounded-full text-[10px] font-black text-slate-700 dark:text-[#dcb46e]/80 bg-transparent border border-slate-300 dark:border-[#dcb46e]/20 hover:border-slate-400 dark:hover:border-[#dcb46e]/40 hover:bg-slate-50 dark:hover:bg-transparent dark:hover:text-[#dcb46e] transition-all active:scale-95 uppercase tracking-[0.1em] shadow-sm">
-          Login
-        </button>
       </div>
     </nav>
   );

@@ -19,8 +19,13 @@ export function TeachingProvider({ children }) {
   const startTeaching = (lesson) => {
     setActiveLesson(lesson);
     setIsActive(true);
-    setMode('EXPLAINING');
     setCurrentStep(0);
+    
+    if (lesson && lesson.blocks[0]?.type === 'code') {
+      setMode('WAITING_TO_TRY');
+    } else {
+      setMode('EXPLAINING');
+    }
     setCurrentCodeLine(0);
     setShowContinueButton(false);
     setUserHasRun(false);
@@ -56,8 +61,18 @@ export function TeachingProvider({ children }) {
       setTimeout(() => stopTeaching(), 1000);
       return;
     }
-    setCurrentStep(prev => prev + 1);
-    setMode('EXPLAINING');
+    const nextStep = currentStep + 1;
+    setCurrentStep(nextStep);
+    
+    if (activeLesson && activeLesson.blocks[nextStep]?.type === 'code') {
+      setMode('WAITING_TO_TRY');
+    } else {
+      setMode('EXPLAINING');
+    }
+  };
+
+  const startCodeExplanation = () => {
+    setMode('EXPLAINING_CODE');
   };
 
   // Setup Admin mode keyboard shortcut
@@ -84,7 +99,8 @@ export function TeachingProvider({ children }) {
     currentWordIndex, setCurrentWordIndex,
     isAdminMode, setIsAdminMode,
     activeLesson, setActiveLesson,
-    startTeaching, stopTeaching, togglePause, continueTeaching, explainTopic, explainLastTopic
+    startTeaching, stopTeaching, togglePause, continueTeaching, explainTopic, explainLastTopic,
+    startCodeExplanation
   };
 
   return (
