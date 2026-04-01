@@ -68,15 +68,15 @@ export default function AdminPage() {
       {/* Sidebar */}
       <aside className="w-60 bg-[#161b2e] border-r border-white/5 flex flex-col fixed top-0 left-0 h-screen z-40">
         <div className="p-5 border-b border-white/5">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-violet-600 to-indigo-500 flex items-center justify-center shadow-lg shadow-violet-500/30">
-              <Code2 size={16} className="text-white" />
+          <Link to="/" className="flex items-center gap-3 group cursor-pointer">
+            <div className="w-10 h-10 rounded-[14px] bg-transparent border border-white/10 flex items-center justify-center p-2.5 shadow-sm">
+              <Code2 className="text-white" size={22} />
             </div>
             <div>
-              <p className="font-bold text-sm text-white">SummerCode</p>
-              <p className="text-[10px] text-violet-400 font-semibold uppercase tracking-widest">Admin</p>
+              <p className="text-lg font-black text-white tracking-tighter uppercase tracking-[0.08em] leading-none mb-0.5">SUMMERCODE</p>
+              <p className="text-[10px] text-violet-400 font-semibold uppercase tracking-widest leading-none">Admin</p>
             </div>
-          </div>
+          </Link>
         </div>
 
         <nav className="flex-1 p-3 flex flex-col gap-1">

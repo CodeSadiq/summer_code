@@ -27,7 +27,7 @@ export default function LessonPage() {
   const {
     isActive, currentStep, isAdminMode,
     setIsSpeaking, mode, isPaused,
-    setActiveLesson, continueTeaching, activeLesson
+    setActiveLesson, continueTeaching, activeLesson, jumpToStep
   } = useTeachingState();
 
   const audioRef = useRef(null);
@@ -163,10 +163,14 @@ export default function LessonPage() {
 
             {lesson.blocks[0] && (
               <TeachingHighlighter stepIndex={0} noIndicator={true}>
-                <h1 className={clsx(
-                  "text-4xl md:text-5xl font-extrabold text-slate-900 tracking-tight leading-[1.05] drop-shadow-sm transition-all duration-300",
-                  (isActive && currentStep === 0) ? "text-blue-600 scale-[1.01] origin-left" : ""
-                )}>
+                <h1 
+                  className={clsx(
+                    "text-4xl md:text-5xl font-extrabold text-slate-900 tracking-tight leading-[1.05] drop-shadow-sm transition-all duration-300",
+                    (isActive && currentStep === 0) ? "text-blue-600 scale-[1.01] origin-left" : "",
+                    (isActive && currentStep !== 0) && "cursor-pointer hover:opacity-70"
+                  )}
+                  onClick={() => isActive && currentStep !== 0 && jumpToStep(0)}
+                >
                   {isAdminMode && (isActive && currentStep === 0) ? lesson.blocks[0].teachingScript?.transcript : lesson.blocks[0].visibleText}
                 </h1>
               </TeachingHighlighter>
@@ -187,7 +191,11 @@ export default function LessonPage() {
 
             if (block.type === 'code') {
               return (
-                <div key={block.id} className={blockLayoutClass}>
+                <div 
+                  key={block.id} 
+                  className={clsx(blockLayoutClass, isActive && currentStep !== actualStep && "cursor-pointer opacity-90 hover:opacity-100")}
+                  onClick={() => isActive && currentStep !== actualStep && jumpToStep(actualStep)}
+                >
                   <TeachingHighlighter stepIndex={actualStep} hasCodeBlock={true}>
                     <CodeBlock
                       visibleText={block.visibleText}
@@ -201,7 +209,11 @@ export default function LessonPage() {
             }
 
             return (
-              <div key={block.id} className={blockLayoutClass}>
+              <div 
+                key={block.id} 
+                className={clsx(blockLayoutClass, isActive && currentStep !== actualStep && "cursor-pointer hover:opacity-70")}
+                onClick={() => isActive && currentStep !== actualStep && jumpToStep(actualStep)}
+              >
                 <TeachingHighlighter stepIndex={actualStep} hasCodeBlock={false}>
                   <p className={clsx(
                     "text-lg leading-relaxed transition-all duration-300 w-full md:max-w-2xl",

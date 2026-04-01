@@ -46,7 +46,7 @@ export default function TeachingPanel() {
       }}
     >
       {/* Single unified container */}
-      <div className="w-full flex-1 border-l border-slate-200 bg-white overflow-hidden flex flex-col shadow-2xl">
+      <div className="w-full flex-1 border-l border-slate-200 bg-white overflow-hidden flex flex-col">
 
         {/* Header */}
         <div className="px-6 pt-6 pb-5 border-b border-slate-100 text-center">

@@ -13,11 +13,11 @@ export default function TopNav() {
   return (
     <nav className="sticky top-0 z-50 flex items-center justify-between px-6 py-3 bg-white/80 backdrop-blur-md border-b border-slate-200/60 h-16">
       <div className="flex items-center gap-10">
-        <Link to="/" className="flex items-center gap-2 group">
-          <div className="bg-blue-600 rounded-lg p-1.5 flex flex-shrink-0">
-            <Code2 className="text-white" size={20} />
+        <Link to="/" className="flex items-center gap-3 transition-transform hover:-translate-y-0.5 duration-300 active:scale-95 group cursor-pointer">
+          <div className="w-10 h-10 rounded-[14px] bg-white border border-slate-200 flex items-center justify-center p-2.5 shadow-[0_2px_10px_rgba(0,0,0,0.02)]">
+            <Code2 className="text-slate-700" size={22} />
           </div>
-          <span className="text-xl font-bold text-slate-800 tracking-tight transition-colors group-hover:text-blue-600">SummerCode</span>
+          <span className="text-lg font-black text-slate-800 tracking-tighter uppercase tracking-[0.08em]">SUMMERCODE</span>
         </Link>
         
         <div className="hidden lg:flex items-center gap-1 ml-4">

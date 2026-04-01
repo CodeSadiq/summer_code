@@ -71,6 +71,21 @@ export function TeachingProvider({ children }) {
     }
   };
 
+  const jumpToStep = (stepIndex) => {
+    if (!activeLesson || !isActive) return;
+    setCurrentStep(stepIndex);
+    
+    if (activeLesson.blocks[stepIndex]?.type === 'code') {
+      setMode('WAITING_TO_TRY');
+    } else {
+      setMode('EXPLAINING');
+    }
+    setCurrentCodeLine(0);
+    setShowContinueButton(false);
+    setUserHasRun(false);
+    setIsPaused(false);
+  };
+
   const startCodeExplanation = () => {
     setMode('EXPLAINING_CODE');
   };
@@ -100,7 +115,7 @@ export function TeachingProvider({ children }) {
     isAdminMode, setIsAdminMode,
     activeLesson, setActiveLesson,
     startTeaching, stopTeaching, togglePause, continueTeaching, explainTopic, explainLastTopic,
-    startCodeExplanation
+    startCodeExplanation, jumpToStep
   };
 
   return (
