@@ -15,6 +15,7 @@ export function TeachingProvider({ children }) {
   const [currentWordIndex, setCurrentWordIndex] = useState(-1);
   const [isAdminMode, setIsAdminMode] = useState(false);
   const [activeLesson, setActiveLesson] = useState(null);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const startTeaching = (lesson) => {
     setActiveLesson(lesson);
@@ -114,6 +115,7 @@ export function TeachingProvider({ children }) {
     currentWordIndex, setCurrentWordIndex,
     isAdminMode, setIsAdminMode,
     activeLesson, setActiveLesson,
+    isSidebarOpen, setIsSidebarOpen,
     startTeaching, stopTeaching, togglePause, continueTeaching, explainTopic, explainLastTopic,
     startCodeExplanation, jumpToStep
   };

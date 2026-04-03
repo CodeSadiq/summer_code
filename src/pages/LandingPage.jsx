@@ -227,6 +227,7 @@ export default function LandingPage() {
                 {["Courses", "Pricing", "Curriculum", "Tutorials"].map(i => (
                   <a key={i} href="#" className="text-sm text-slate-500 hover:text-blue-500 dark:text-slate-400 dark:hover:text-blue-400 transition-colors">{i}</a>
                 ))}
+                <Link to="/admin" className="text-sm text-slate-500 hover:text-blue-500 dark:text-slate-400 dark:hover:text-blue-400 transition-colors">Admin</Link>
               </div>
               <div className="flex flex-col gap-4">
                 <h4 className="text-[11px] font-black text-slate-800 dark:text-white uppercase tracking-widest">Company</h4>

@@ -2,8 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { NavLink, useParams } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, Search, BookOpen } from 'lucide-react';
 import clsx from 'clsx';
+import { useTeachingState } from '../contexts/TeachingContext';
 
 export default function Sidebar({ collapsed, setCollapsed }) {
+  const { isSidebarOpen, setIsSidebarOpen } = useTeachingState();
   const [lessons, setLessons] = useState([]);
   const { slug } = useParams();
 
@@ -22,76 +24,88 @@ export default function Sidebar({ collapsed, setCollapsed }) {
   const filteredLessons = lessons.filter(l => l.course === currentCourse);
 
   return (
-    <aside className={clsx(
-      "bg-white dark:bg-slate-950 border-r border-slate-200 dark:border-white/5 flex flex-col fixed left-0 top-16 z-30 transition-[width,background-color] duration-300 ease-in-out h-[calc(100vh-64px)] overflow-y-auto",
-      collapsed ? "w-16" : "w-64"
-    )}>
-      {/* Header */}
-      <div className="p-4 border-b border-slate-100 dark:border-white/5 flex items-center justify-between">
-        {!collapsed && (
-          <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300 font-bold uppercase tracking-widest text-[10px]">
-            <BookOpen size={14} className="text-blue-500" />
-            {currentCourse} COURSE
-          </div>
-        )}
-        <button
-          onClick={() => setCollapsed(!collapsed)}
-          className="p-1 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 rounded bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 transition-colors"
-        >
-          {collapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
-        </button>
-      </div>
-
-      {/* Search Bar */}
-      {!collapsed && (
-        <div className="px-4 py-3">
-          <div className="relative">
-            <Search className="w-4 h-4 text-slate-400 dark:text-slate-500 absolute left-3 top-2.5" />
-            <input 
-              type="text" 
-              placeholder="Search lessons..." 
-              className="w-full pl-9 pr-3 py-2 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg text-sm text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-600 focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all"
-            />
-          </div>
-        </div>
+    <>
+      {/* Mobile Backdrop */}
+      {isSidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-40 md:hidden"
+          onClick={() => setIsSidebarOpen(false)}
+        />
       )}
 
-      {/* Lesson list */}
-      <nav className="flex flex-col gap-1 p-3 flex-1 overflow-y-auto">
-        {filteredLessons.map((lesson, idx) => (
-          <NavLink
-            to={`/lessons/${lesson.slug}`}
-            key={lesson.slug}
-            title={collapsed ? lesson.title : ''}
-            className={({ isActive }) => clsx(
-              "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all",
-              collapsed ? "justify-center" : "",
-              isActive
-                ? "bg-slate-50 dark:bg-white/10 text-blue-700 dark:text-blue-400 font-semibold"
-                : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white"
-            )}
+      <aside className={clsx(
+        "bg-white dark:bg-slate-950 border-r border-slate-200 dark:border-white/5 flex flex-col fixed left-0 top-16 z-50 transition-all duration-300 ease-in-out h-[calc(100vh-64px)] overflow-y-auto",
+        isSidebarOpen ? "translate-x-0 w-64 shadow-2xl" : "-translate-x-full md:translate-x-0",
+        collapsed ? "md:w-16" : "md:w-64"
+      )}>
+        {/* Header */}
+        <div className="p-4 border-b border-slate-100 dark:border-white/5 flex items-center justify-between">
+          {(!collapsed || isSidebarOpen) && (
+            <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300 font-bold uppercase tracking-widest text-[10px]">
+              <BookOpen size={14} className="text-blue-500" />
+              {currentCourse} COURSE
+            </div>
+          )}
+          <button
+            onClick={() => setCollapsed(!collapsed)}
+            className="p-1 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 rounded bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 transition-colors hidden md:block"
           >
-            {({ isActive }) => (
-              <>
-                {/* Number Badge */}
-                <span className={clsx(
-                  "w-6 h-6 flex items-center justify-center flex-shrink-0 rounded-full text-[10px] font-medium",
-                  isActive ? "bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400" : "bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-slate-500"
-                )}>
-                  {idx + 1}
-                </span>
+            {collapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
+          </button>
+        </div>
 
-                {/* Title */}
-                {!collapsed && (
-                  <span className="truncate">
-                    {lesson.title}
+        {/* Search Bar */}
+        {(!collapsed || isSidebarOpen) && (
+          <div className="px-4 py-3">
+            <div className="relative">
+              <Search className="w-4 h-4 text-slate-400 dark:text-slate-500 absolute left-3 top-2.5" />
+              <input 
+                type="text" 
+                placeholder="Search lessons..." 
+                className="w-full pl-9 pr-3 py-2 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg text-sm text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-600 focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all"
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Lesson list */}
+        <nav className="flex flex-col gap-1 p-3 flex-1 overflow-y-auto">
+          {filteredLessons.map((lesson, idx) => (
+            <NavLink
+              to={`/lessons/${lesson.slug}`}
+              key={lesson.slug}
+              title={collapsed ? lesson.title : ''}
+              onClick={() => setIsSidebarOpen(false)}
+              className={({ isActive }) => clsx(
+                "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all",
+                (collapsed && !isSidebarOpen) ? "justify-center" : "",
+                isActive
+                  ? "bg-slate-50 dark:bg-white/10 text-blue-700 dark:text-blue-400 font-semibold"
+                  : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white"
+              )}
+            >
+              {({ isActive }) => (
+                <>
+                  {/* Number Badge */}
+                  <span className={clsx(
+                    "w-6 h-6 flex items-center justify-center flex-shrink-0 rounded-full text-[10px] font-medium",
+                    isActive ? "bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400" : "bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-slate-500"
+                  )}>
+                    {idx + 1}
                   </span>
-                )}
-              </>
-            )}
-          </NavLink>
-        ))}
-      </nav>
-    </aside>
+
+                  {/* Title */}
+                  {(!collapsed || isSidebarOpen) && (
+                    <span className="truncate">
+                      {lesson.title}
+                    </span>
+                  )}
+                </>
+              )}
+            </NavLink>
+          ))}
+        </nav>
+      </aside>
+    </>
   );
 }

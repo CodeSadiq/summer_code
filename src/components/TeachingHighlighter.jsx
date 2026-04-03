@@ -26,7 +26,7 @@ export default function TeachingHighlighter({ children, stepIndex, hasCodeBlock,
         isCurrentBlock
           ? "bg-blue-50/80 dark:bg-blue-900/10 border border-blue-100/50 dark:border-blue-800/40 shadow-sm"
           : "bg-transparent border border-transparent",
-        isCurrentBlock ? "px-6 -mx-6 py-6 -my-4" : "py-4"
+        isCurrentBlock ? "px-6 py-6" : "px-0 py-4"
       )}
     >
       {showTryMessage && (

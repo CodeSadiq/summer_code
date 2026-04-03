@@ -214,7 +214,10 @@ export default function AdminPage() {
           >
             <Eye size={16} /> Preview Site
           </Link>
-          <button className="w-full flex items-center gap-2.5 text-slate-500 hover:text-red-500 text-sm font-semibold px-4 py-2.5 rounded-xl transition-all mt-1">
+          <button 
+            onClick={() => navigate('/')}
+            className="w-full flex items-center gap-2.5 text-slate-500 hover:text-red-500 text-sm font-semibold px-4 py-2.5 rounded-xl transition-all mt-1"
+          >
             <LogOut size={16} /> Exit Admin
           </button>
         </div>

@@ -146,7 +146,7 @@ export default function LessonPage() {
   if (!lesson && !loading) return <div className="p-12 text-center text-red-500 font-bold">Lesson not found</div>;
 
   return (
-    <div className="max-w-4xl mx-auto p-8 md:p-12 lg:p-16 relative font-sans animate-entrance w-full">
+    <div className="max-w-4xl mx-auto p-8 pt-12 md:p-12 md:pt-16 lg:p-16 lg:pt-20 relative font-sans animate-entrance w-full">
       <div className="flex-1 relative z-10 w-full">
         {isAdminMode && (
           <div className="fixed top-0 left-0 right-0 bg-red-600/90 text-white font-black text-center py-2 text-[10px] tracking-[0.4em] z-[100] shadow-2xl uppercase">
@@ -155,9 +155,9 @@ export default function LessonPage() {
         )}
 
         {/* Header Section */}
-        <header className="mb-12">
+        <header className="mb-8">
           <div className="flex flex-col">
-            <span className="text-blue-600 font-bold tracking-widest text-[10px] uppercase mb-4">
+            <span className="text-blue-600 font-bold tracking-widest text-[10px] uppercase mb-2">
               CHAPTER {String(lesson.chapterOrder || (currentIdx + 1)).padStart(2, '0')}
             </span>
 
@@ -179,7 +179,7 @@ export default function LessonPage() {
         </header>
 
         {/* Content Blocks */}
-        <div className="space-y-12">
+        <div className="space-y-8">
           {lesson.blocks.slice(1).map((block, idx) => {
             const actualStep = idx + 1;
             const isCurrentBlock = isActive && currentStep === actualStep;
