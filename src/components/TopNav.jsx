@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Code2, Sparkles, Moon, Sun, Menu } from 'lucide-react';
+import { Code2, Sparkles, Moon, Sun, ArrowRight } from 'lucide-react';
 import { useTeachingState } from '../contexts/TeachingContext';
 import clsx from 'clsx';
 
 export default function TopNav() {
-  const { isActive, startTeaching, activeLesson, isSidebarOpen, setIsSidebarOpen } = useTeachingState();
+  const { isActive, startTeaching, activeLesson } = useTeachingState();
   const [topics, setTopics] = useState([]);
   const [lessons, setLessons] = useState([]);
   const location = useLocation();
@@ -31,17 +31,9 @@ export default function TopNav() {
   };
 
   return (
-    <nav className="sticky top-0 h-16 bg-[#fafaf9]/80 dark:bg-slate-950/80 backdrop-blur-md border-b border-slate-200/60 dark:border-white/5 z-[100] flex items-center px-4 md:px-12 justify-between">
-      <div className="flex items-center flex-1">
-        {location.pathname.startsWith('/lessons/') && (
-          <button 
-            onClick={() => setIsSidebarOpen(!isSidebarOpen)} 
-            className="p-2 mr-3 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl md:hidden text-slate-700 dark:text-slate-300 hover:bg-slate-50 transition-colors"
-          >
-            <Menu size={20} />
-          </button>
-        )}
-        <Link to="/" className="flex items-center gap-3 group mr-4 shrink-0">
+    <nav className="sticky top-0 h-16 bg-[#fafaf9]/80 dark:bg-slate-950/80 backdrop-blur-md border-b border-slate-200/60 dark:border-white/5 z-[100] flex items-center px-4 md:px-10 justify-between overflow-hidden">
+      <div className="flex items-center flex-1 min-w-0">
+        <Link to="/" className="flex items-center gap-3 group mr-4 shrink-0 flex-shrink-0">
           <div className="w-10 h-10 rounded-[14px] bg-white dark:bg-transparent border border-slash-200 dark:border-white/10 flex items-center justify-center p-2.5">
             <Code2 className="text-slate-700 dark:text-blue-400" size={22} />
           </div>
@@ -77,21 +69,21 @@ export default function TopNav() {
         </div>
       </div>
 
-      <div className="flex items-center gap-4 ml-4">
-        {(!isActive && activeLesson && location.pathname.startsWith('/lessons/')) ? (
+      <div className="flex items-center gap-3 ml-4 flex-shrink-0">
+        {(!isActive && activeLesson && location.pathname.startsWith('/lessons/')) && (
           <button
             onClick={() => startTeaching(activeLesson)}
-            className="flex items-center gap-2 bg-slate-900 hover:bg-slate-800 dark:bg-blue-600 dark:hover:bg-blue-500 text-white rounded-full px-5 py-2.5 text-sm font-semibold transition-all active:scale-95"
+            className="hidden md:flex items-center gap-2 bg-slate-900 hover:bg-slate-800 dark:bg-blue-600 dark:hover:bg-blue-500 text-white rounded-full px-5 py-2.5 text-sm font-semibold transition-all active:scale-95 shadow-sm"
           >
             <Sparkles size={16} className="text-yellow-400" />
-            <span className="hidden sm:inline">Start Teaching</span>
-            <span className="sm:hidden">Start</span>
-          </button>
-        ) : (
-          <button className="bg-slate-900 hover:bg-slate-800 dark:bg-blue-600 dark:hover:bg-blue-500 text-white px-6 py-2 rounded-full text-sm font-medium transition-all">
-            Login
+            <span className="hidden lg:inline">Start Guided Teaching</span>
+            <span className="lg:hidden">Start Teaching</span>
           </button>
         )}
+        <button className="text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white px-4 py-2 rounded-full text-xs md:text-sm font-medium transition-all active:scale-95 flex items-center group">
+          Login
+          {location.pathname === '/' && <ArrowRight size={14} className="ml-1.5 transition-transform group-hover:translate-x-0.5" />}
+        </button>
       </div>
     </nav>
   );

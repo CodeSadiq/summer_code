@@ -7,6 +7,7 @@ import { useTeachingState } from '../contexts/TeachingContext';
 export default function Sidebar({ collapsed, setCollapsed }) {
   const { isSidebarOpen, setIsSidebarOpen } = useTeachingState();
   const [lessons, setLessons] = useState([]);
+  const [topics, setTopics] = useState([]);
   const { slug } = useParams();
 
   useEffect(() => {
@@ -14,11 +15,24 @@ export default function Sidebar({ collapsed, setCollapsed }) {
       .then(res => res.json())
       .then(data => setLessons(data))
       .catch(err => console.error(err));
+
+    fetch('http://localhost:5000/api/topics')
+      .then(res => res.json())
+      .then(data => setTopics(data))
+      .catch(err => console.error(err));
   }, []);
+
+  const getFirstLessonSlug = (courseName) => {
+    const courseLessons = lessons.filter(l => l.course === courseName);
+    if (courseLessons.length > 0) {
+      return courseLessons.sort((a, b) => (a.chapterOrder || 0) - (b.chapterOrder || 0))[0].slug;
+    }
+    return null;
+  };
 
   // Find the current lesson to determine the active course
   const currentLesson = lessons.find(l => l.slug === slug);
-  const currentCourse = currentLesson?.course || lessons[0]?.course || 'HTML';
+  const currentCourse = currentLesson?.course || (lessons.length > 0 ? lessons[0].course : 'HTML');
 
   // Filter lessons to only show those in the current course
   const filteredLessons = lessons.filter(l => l.course === currentCourse);
@@ -75,7 +89,6 @@ export default function Sidebar({ collapsed, setCollapsed }) {
               to={`/lessons/${lesson.slug}`}
               key={lesson.slug}
               title={collapsed ? lesson.title : ''}
-              onClick={() => setIsSidebarOpen(false)}
               className={({ isActive }) => clsx(
                 "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all",
                 (collapsed && !isSidebarOpen) ? "justify-center" : "",
@@ -86,25 +99,50 @@ export default function Sidebar({ collapsed, setCollapsed }) {
             >
               {({ isActive }) => (
                 <>
-                  {/* Number Badge */}
                   <span className={clsx(
                     "w-6 h-6 flex items-center justify-center flex-shrink-0 rounded-full text-[10px] font-medium",
                     isActive ? "bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400" : "bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-slate-500"
                   )}>
                     {idx + 1}
                   </span>
-
-                  {/* Title */}
-                  {(!collapsed || isSidebarOpen) && (
-                    <span className="truncate">
-                      {lesson.title}
-                    </span>
-                  )}
+                  {(!collapsed || isSidebarOpen) && <span className="truncate">{lesson.title}</span>}
                 </>
               )}
             </NavLink>
           ))}
         </nav>
+
+        {/* Course Switcher - For mobile users only */}
+        {isSidebarOpen && topics.length > 0 && (
+          <div className="mt-auto p-4 border-t border-slate-100 dark:border-white/5 md:hidden">
+            <div className="text-[9px] font-bold text-slate-400 dark:text-slate-600 tracking-widest uppercase mb-3 px-2">
+              Browse Courses
+            </div>
+            <div className="grid grid-cols-1 gap-1">
+              {topics.filter(t => t.status === 'Active').map(topic => {
+                const slug = getFirstLessonSlug(topic.name);
+                if (!slug) return null;
+                const isActiveCourse = currentCourse === topic.name;
+
+                return (
+                  <NavLink
+                    key={topic.id}
+                    to={`/lessons/${slug}`}
+                    className={clsx(
+                      "px-3 py-2 rounded-lg text-[13px] font-medium transition-colors flex items-center gap-2",
+                      isActiveCourse 
+                        ? "bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400" 
+                        : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-white/5"
+                    )}
+                  >
+                    <div className={clsx("w-1.5 h-1.5 rounded-full", isActiveCourse ? "bg-blue-500" : "bg-slate-300 dark:bg-slate-700")} />
+                    {topic.name}
+                  </NavLink>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </aside>
     </>
   );

@@ -24,13 +24,13 @@ export default function LandingPage() {
   const getFirstLessonSlug = (courseName) => {
     const courseLessons = lessons.filter(l => l.course === courseName);
     if (courseLessons.length > 0) {
-      return courseLessons.sort((a,b) => (a.chapterOrder || 0) - (b.chapterOrder || 0))[0].slug;
+      return courseLessons.sort((a, b) => (a.chapterOrder || 0) - (b.chapterOrder || 0))[0].slug;
     }
     return null;
   };
 
   return (
-    <div className="min-h-screen bg-[#fafaf9] dark:bg-slate-950 relative overflow-hidden font-sans selection:bg-blue-100 dark:selection:bg-blue-900 selection:text-blue-900 dark:selection:text-blue-200">
+    <div className="flex flex-col min-h-screen bg-[#fafaf9] dark:bg-slate-950 relative overflow-hidden font-sans selection:bg-blue-100 dark:selection:bg-blue-900 selection:text-blue-900 dark:selection:text-blue-200">
 
       {/* Nebula Background Elements */}
       <div className="fixed inset-0 pointer-events-none z-0">
@@ -153,8 +153,12 @@ export default function LandingPage() {
       <section className="relative z-10 max-w-6xl mx-auto px-6 pb-64">
         <div className="flex items-end justify-between mb-24 gap-8">
           <div className="flex flex-col gap-4">
-            <span className="text-[10px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-[0.5em]">Current Catalog</span>
-            <h2 className="text-5xl font-black text-slate-800 dark:text-white tracking-tighter">Hamare Courses Ek Nazar Mein</h2>
+            <Link to="/courses" className="group flex items-center gap-6">
+              <h2 className="text-4xl md:text-5xl font-black text-slate-800 dark:text-white tracking-tighter group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-all">Available Courses</h2>
+              <div className="w-12 h-12 md:w-14 md:h-14 rounded-full bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-all shadow-sm group-hover:shadow-blue-500/30">
+                <ArrowRight size={24} className="transition-transform group-hover:translate-x-1.5" />
+              </div>
+            </Link>
           </div>
           <div className="h-px bg-slate-200 dark:bg-slate-800 flex-1 mb-5 hidden md:block"></div>
         </div>
@@ -165,9 +169,9 @@ export default function LandingPage() {
             const isActive = course.status === 'Active';
 
             return isActive ? (
-              <Link 
-                key={course.id} 
-                to={`/lessons/${getFirstLessonSlug(course.name) || 'html-introduction'}`} 
+              <Link
+                key={course.id}
+                to={`/lessons/${getFirstLessonSlug(course.name) || 'html-introduction'}`}
                 className="snap-center shrink-0 w-[85%] md:w-[400px] glass-panel group p-12 rounded-[3.5rem] bg-white dark:bg-[#1e293b]/70 hover:border-slate-300 dark:hover:border-blue-500/30 hover:shadow-xl dark:hover:shadow-[0_20px_40px_rgba(59,130,246,0.1)] hover:-translate-y-2 transition-all relative overflow-hidden flex flex-col justify-between min-h-[480px]"
               >
                 <div>
@@ -206,50 +210,37 @@ export default function LandingPage() {
           })}
         </div>
 
-        {/* Simple & Beautiful Footer */}
-        <footer className="mt-72 border-t border-slate-200 dark:border-slate-800 pt-24 pb-20 relative overflow-hidden">
-          <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-start gap-16 px-6">
-            <div className="flex flex-col gap-6 max-w-sm">
-              <Link to="/" className="flex items-center gap-3 transition-transform hover:-translate-y-0.5 duration-300 group">
-                <div className="w-10 h-10 rounded-[14px] bg-white dark:bg-transparent border border-slate-200 dark:border-white/10 flex items-center justify-center p-2.5 shadow-sm">
-                  <Code2 className="text-slate-700 dark:text-blue-400" size={22} />
+        {/* Minimalist Professional Footer */}
+        <footer className="mt-40 border-t border-slate-200/60 dark:border-white/5 py-16 px-6">
+          <div className="max-w-6xl mx-auto">
+            <div className="flex flex-col md:flex-row justify-between items-center gap-10">
+              <Link to="/" className="flex items-center gap-3 group transition-transform hover:-translate-y-0.5">
+                <div className="w-9 h-9 rounded-xl bg-slate-900 dark:bg-blue-600 flex items-center justify-center p-2 shadow-lg">
+                  <Code2 className="text-white" size={20} />
                 </div>
-                <span className="text-lg font-black text-slate-800 dark:text-white tracking-tighter uppercase tracking-[0.08em]">SUMMERCODE</span>
+                <span className="text-sm font-black text-slate-800 dark:text-white tracking-[0.2em] uppercase">SUMMERCODE</span>
               </Link>
-              <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
-                Hinglish mein coding seekhne ka sabse intuitive platform. Lectures ko interactive banayein aur apni skill level grow karein.
+
+              <div className="flex flex-wrap justify-center gap-6 md:gap-10">
+                {["Courses", "Pricing", "About", "Community", "Admin"].map(item => (
+                  <Link 
+                    key={item} 
+                    to={item === "Admin" ? "/admin" : "#"} 
+                    className="text-[12px] font-bold text-slate-500 hover:text-slate-900 dark:text-slate-500 dark:hover:text-blue-400 uppercase tracking-widest transition-colors"
+                  >
+                    {item}
+                  </Link>
+                ))}
+              </div>
+            </div>
+
+            <div className="mt-16 pt-8 border-t border-slate-100 dark:border-white/5 flex flex-col md:flex-row justify-between items-center gap-4">
+              <p className="text-[10px] font-medium text-slate-400 dark:text-slate-600 uppercase tracking-[0.2em]">
+                &copy; 2026 SummerCode Platform. All Rights Reserved.
               </p>
-            </div>
-
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-12 sm:gap-24 w-full md:w-auto">
-              <div className="flex flex-col gap-4">
-                <h4 className="text-[11px] font-black text-slate-800 dark:text-white uppercase tracking-widest">Platform</h4>
-                {["Courses", "Pricing", "Curriculum", "Tutorials"].map(i => (
-                  <a key={i} href="#" className="text-sm text-slate-500 hover:text-blue-500 dark:text-slate-400 dark:hover:text-blue-400 transition-colors">{i}</a>
-                ))}
-                <Link to="/admin" className="text-sm text-slate-500 hover:text-blue-500 dark:text-slate-400 dark:hover:text-blue-400 transition-colors">Admin</Link>
+              <div className="flex items-center gap-6">
+                <span className="text-[9px] font-black text-slate-300 dark:text-slate-800 uppercase tracking-[0.4em]">BUILT WITH LOVE IN INDIA</span>
               </div>
-              <div className="flex flex-col gap-4">
-                <h4 className="text-[11px] font-black text-slate-800 dark:text-white uppercase tracking-widest">Company</h4>
-                {["About Us", "Community", "Privacy", "Terms"].map(i => (
-                  <a key={i} href="#" className="text-sm text-slate-500 hover:text-blue-500 dark:text-slate-400 dark:hover:text-blue-400 transition-colors">{i}</a>
-                ))}
-              </div>
-              <div className="flex flex-col gap-4">
-                <h4 className="text-[11px] font-black text-slate-800 dark:text-white uppercase tracking-widest">Social</h4>
-                {["YouTube", "Instagram", "Discord", "X / Twitter"].map(i => (
-                  <a key={i} href="#" className="text-sm text-slate-500 hover:text-blue-500 dark:text-slate-400 dark:hover:text-blue-400 transition-colors">{i}</a>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          <div className="max-w-6xl mx-auto px-6 mt-24 pt-8 border-t border-slate-100 dark:border-slate-800 flex flex-col md:flex-row justify-between items-center gap-6">
-            <p className="text-xs text-slate-400 dark:text-slate-600 font-medium tracking-tight">
-              &copy; 2026 SummerCode Platform.
-            </p>
-            <div className="flex items-center gap-8">
-              <span className="text-[10px] font-black text-slate-300 dark:text-slate-800 uppercase tracking-[0.4em]">BUILT WITH ❤️ IN INDIA</span>
             </div>
           </div>
         </footer>
