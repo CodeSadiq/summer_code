@@ -126,6 +126,18 @@ export default function LessonPage() {
     else if (isActive) audio.play().catch(() => { });
   }, [isPaused, isActive]);
 
+  // Cleanup audio when component unmounts
+  useEffect(() => {
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.src = "";
+        audioRef.current = null;
+      }
+      setIsSpeaking(false);
+    };
+  }, [setIsSpeaking]);
+
   useEffect(() => {
     if (!isActive && audioRef.current) {
       audioRef.current.pause();

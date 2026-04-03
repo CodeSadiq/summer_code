@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 
 const TeachingContext = createContext();
 
@@ -17,7 +18,14 @@ export function TeachingProvider({ children }) {
   const [activeLesson, setActiveLesson] = useState(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
+  const location = useLocation();
+
   const startTeaching = (lesson) => {
+    // If already active, clear previous session first
+    if (isActive) {
+      stopTeaching();
+    }
+    
     setActiveLesson(lesson);
     setIsActive(true);
     setCurrentStep(0);
@@ -39,6 +47,13 @@ export function TeachingProvider({ children }) {
     setCurrentStep(0);
     setCurrentWordIndex(-1);
   };
+
+  // Automatically stop teaching if user navigates away from lesson pages
+  useEffect(() => {
+    if (isActive && !location.pathname.startsWith('/lessons/')) {
+      stopTeaching();
+    }
+  }, [location.pathname, isActive]);
 
   const explainTopic = () => {
     setMode('BOT_CODING');

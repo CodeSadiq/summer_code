@@ -10,8 +10,8 @@ import AdminLessonEditor from './pages/AdminLessonEditor';
 
 function App() {
   return (
-    <TeachingProvider>
-      <BrowserRouter>
+    <BrowserRouter>
+      <TeachingProvider>
         <Routes>
           <Route path="/" element={<LandingPage />} />
           <Route path="/courses" element={<AvailableCoursesPage />} />
@@ -20,8 +20,8 @@ function App() {
           <Route path="/admin" element={<AdminPage />} />
           <Route path="/admin/lesson/:slug" element={<AdminLessonEditor />} />
         </Routes>
-      </BrowserRouter>
-    </TeachingProvider>
+      </TeachingProvider>
+    </BrowserRouter>
   );
 }
 
