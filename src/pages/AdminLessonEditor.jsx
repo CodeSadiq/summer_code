@@ -7,8 +7,8 @@ import {
   BookOpen, Layers, Play, Pause
 } from 'lucide-react';
 import clsx from 'clsx';
-
-const API = 'http://localhost:5000';
+import { API_URL } from '../config';
+const API = API_URL;
 
 const BLOCK_TYPES = [
   { type: 'heading', label: 'Heading', icon: <Type size={16} />, color: 'blue' },
@@ -575,7 +575,7 @@ function AudioUploader({ block, onChange }) {
       const duration = await readDurationFromFile(file);
       const form = new FormData();
       form.append('audio', file);
-      const res = await fetch('http://localhost:5000/api/admin/upload-audio', {
+      const res = await fetch(`${API_URL}/api/admin/upload-audio`, {
         method: 'POST',
         body: form,
       });

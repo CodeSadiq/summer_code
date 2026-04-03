@@ -7,8 +7,8 @@ import {
   Layers, Cpu, MousePointer2, X, Settings
 } from 'lucide-react';
 import clsx from 'clsx';
-
-const API = 'http://localhost:5000';
+import { API_URL } from '../config';
+const API = API_URL;
 
 export default function AdminPage() {
   const navigate = useNavigate();
@@ -29,10 +29,16 @@ export default function AdminPage() {
 
   useEffect(() => {
     // Fetch Lessons
+    setLoading(true);
     fetch(`${API}/api/lessons`)
       .then(r => r.json())
       .then(data => {
-        setLessons(data);
+        if (Array.isArray(data)) {
+          setLessons(data);
+        } else {
+          setLessons([]);
+          if (data.error) showToast(data.error, 'error');
+        }
         setLoading(false);
       })
       .catch(() => { showToast('Could not connect to server', 'error'); setLoading(false); });
@@ -41,8 +47,13 @@ export default function AdminPage() {
     fetch(`${API}/api/topics`)
       .then(r => r.json())
       .then(data => {
-        setAllTopics(data);
-        setCourses(data.map(t => t.name));
+        if (Array.isArray(data)) {
+          setAllTopics(data);
+          setCourses(data.map(t => t.name));
+        } else {
+          setAllTopics([]);
+          setCourses([]);
+        }
       })
       .catch(console.error);
   }, []);
@@ -55,21 +66,21 @@ export default function AdminPage() {
     const name = newTopicName.trim();
     if (!name) return;
     if (courses.includes(name)) {
-       showToast(`Course "${name}" already exists!`, 'error');
-       return;
+      showToast(`Course "${name}" already exists!`, 'error');
+      return;
     }
 
     const newTopic = {
-       id: name,
-       name: name,
-       subtitle: 'New Course',
-       description: 'Landing page description for this course.',
-       status: 'Coming Soon',
-       icon: 'Code2'
+      id: name,
+      name: name,
+      subtitle: 'New Course',
+      description: 'Landing page description for this course.',
+      status: 'Coming Soon',
+      icon: 'Code2'
     };
 
     try {
-      const res = await fetch(`${API}/api/admin/save-topic`, {
+      const res = await fetch(`${API_URL}/api/admin/save-topic`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newTopic)
@@ -83,13 +94,13 @@ export default function AdminPage() {
         setIsAddingTopic(false);
       }
     } catch {
-       showToast('Failed to save course', 'error');
+      showToast('Failed to save course', 'error');
     }
   };
 
   const handleDeleteTopic = async (topicName) => {
     if (!window.confirm(`Delete the "${topicName}" course and all its landing page metadata?`)) return;
-    
+
     try {
       const res = await fetch(`${API}/api/admin/delete-topic/${topicName}`, { method: 'DELETE' });
       const data = await res.json();
@@ -100,7 +111,7 @@ export default function AdminPage() {
         showToast(`Course "${topicName}" deleted safely`);
       }
     } catch {
-       showToast('Failed to delete course', 'error');
+      showToast('Failed to delete course', 'error');
     }
   };
 
@@ -127,13 +138,13 @@ export default function AdminPage() {
   };
 
   const stats = {
-    totalChapters: lessons.length,
-    totalBlocks: lessons.reduce((acc, l) => acc + (l.blocks?.length || 0), 0),
-    activeCourses: allTopics.length,
-    audioClips: lessons.reduce((acc, l) => {
+    totalChapters: Array.isArray(lessons) ? lessons.length : 0,
+    totalBlocks: Array.isArray(lessons) ? lessons.reduce((acc, l) => acc + (l.blocks?.length || 0), 0) : 0,
+    activeCourses: Array.isArray(allTopics) ? allTopics.length : 0,
+    audioClips: Array.isArray(lessons) ? lessons.reduce((acc, l) => {
       const audioCount = (l.blocks || []).filter(b => b.teachingScript?.audioUrl).length;
       return acc + audioCount;
-    }, 0)
+    }, 0) : 0
   };
 
   return (
@@ -164,32 +175,32 @@ export default function AdminPage() {
           <div className="flex items-center justify-between px-3 mb-2">
             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">FILTER BY COURSE</p>
             <button
-               onClick={() => setIsAddingTopic(!isAddingTopic)}
-               className={clsx(
-                 "p-1 rounded-md transition-all",
-                 isAddingTopic ? "bg-slate-100 text-red-500 hover:text-red-700" : "text-slate-400 hover:text-blue-600 hover:bg-slate-50"
-               )}
-               title={isAddingTopic ? "Cancel" : "Add New Course"}
+              onClick={() => setIsAddingTopic(!isAddingTopic)}
+              className={clsx(
+                "p-1 rounded-md transition-all",
+                isAddingTopic ? "bg-slate-100 text-red-500 hover:text-red-700" : "text-slate-400 hover:text-blue-600 hover:bg-slate-50"
+              )}
+              title={isAddingTopic ? "Cancel" : "Add New Course"}
             >
-               {isAddingTopic ? <X size={14} /> : <Plus size={14} />}
+              {isAddingTopic ? <X size={14} /> : <Plus size={14} />}
             </button>
           </div>
 
           {isAddingTopic && (
             <form onSubmit={handleAddTopic} className="px-3 mb-4 animate-in slide-in-from-top-2 duration-300">
-               <div className="relative group">
-                 <input
-                   autoFocus
-                   type="text"
-                   placeholder="Course name..."
-                   value={newTopicName}
-                   onChange={e => setNewTopicName(e.target.value)}
-                   className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 outline-none focus:border-blue-500 transition-all shadow-sm"
-                 />
-                 <button type="submit" className="absolute right-1 top-1 p-1 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-colors">
-                    <ChevronRight size={14} />
-                 </button>
-               </div>
+              <div className="relative group">
+                <input
+                  autoFocus
+                  type="text"
+                  placeholder="Course name..."
+                  value={newTopicName}
+                  onChange={e => setNewTopicName(e.target.value)}
+                  className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 outline-none focus:border-blue-500 transition-all shadow-sm"
+                />
+                <button type="submit" className="absolute right-1 top-1 p-1 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-colors">
+                  <ChevronRight size={14} />
+                </button>
+              </div>
             </form>
           )}
 
@@ -214,7 +225,7 @@ export default function AdminPage() {
           >
             <Eye size={16} /> Preview Site
           </Link>
-          <button 
+          <button
             onClick={() => navigate('/')}
             className="w-full flex items-center gap-2.5 text-slate-500 hover:text-red-500 text-sm font-semibold px-4 py-2.5 rounded-xl transition-all mt-1"
           >
@@ -272,13 +283,13 @@ export default function AdminPage() {
               </div>
             </div>
           ) : (
-            <LessonGrid 
-              lessons={filteredLessons} 
-              deleting={deleting} 
-              handleDelete={handleDelete} 
-              loading={loading} 
-              navigate={navigate} 
-              activeCourse={activeCourse} 
+            <LessonGrid
+              lessons={filteredLessons}
+              deleting={deleting}
+              handleDelete={handleDelete}
+              loading={loading}
+              navigate={navigate}
+              activeCourse={activeCourse}
             />
           )}
         </main>
@@ -295,21 +306,21 @@ export default function AdminPage() {
       )}
       {/* Topic Settings Modal */}
       {editingTopic && (
-        <TopicSettingsModal 
-           topic={editingTopic} 
-           onClose={() => setEditingTopic(null)} 
-           onSave={(updated) => {
-             fetch(`${API}/api/admin/save-topic`, {
-               method: 'POST',
-               headers: { 'Content-Type': 'application/json' },
-               body: JSON.stringify(updated)
-             }).then(() => {
-               setAllTopics(prev => prev.map(t => t.id === updated.id ? updated : t));
-               setCourses(prev => prev.map(c => c === editingTopic.name ? updated.name : c));
-               showToast('Course settings updated');
-               setEditingTopic(null);
-             }).catch(() => showToast('Failed to save settings', 'error'));
-           }}
+        <TopicSettingsModal
+          topic={editingTopic}
+          onClose={() => setEditingTopic(null)}
+          onSave={(updated) => {
+            fetch(`${API}/api/admin/save-topic`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(updated)
+            }).then(() => {
+              setAllTopics(prev => prev.map(t => t.id === updated.id ? updated : t));
+              setCourses(prev => prev.map(c => c === editingTopic.name ? updated.name : c));
+              showToast('Course settings updated');
+              setEditingTopic(null);
+            }).catch(() => showToast('Failed to save settings', 'error'));
+          }}
         />
       )}
     </div>
@@ -354,28 +365,28 @@ function TopicSettingsModal({ topic, onClose, onSave }) {
         <div className="space-y-4 overflow-y-auto max-h-[60vh] pr-2 no-scrollbar">
           <div className="space-y-1.5">
             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Display Name</label>
-            <input 
-              value={data.name} 
-              onChange={e => setData({...data, name: e.target.value})}
+            <input
+              value={data.name}
+              onChange={e => setData({ ...data, name: e.target.value })}
               className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-3 text-sm font-bold text-slate-800 outline-none focus:ring-2 focus:ring-blue-500/30"
             />
           </div>
 
           <div className="space-y-1.5">
             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Subtitle</label>
-            <input 
-              value={data.subtitle} 
+            <input
+              value={data.subtitle}
               placeholder="e.g. Modern Basics"
-              onChange={e => setData({...data, subtitle: e.target.value})}
+              onChange={e => setData({ ...data, subtitle: e.target.value })}
               className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-3 text-sm font-bold text-slate-800 outline-none focus:ring-2 focus:ring-blue-500/30"
             />
           </div>
 
           <div className="space-y-1.5">
             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Status</label>
-            <select 
-              value={data.status} 
-              onChange={e => setData({...data, status: e.target.value})}
+            <select
+              value={data.status}
+              onChange={e => setData({ ...data, status: e.target.value })}
               className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-3 text-sm font-bold text-slate-800 outline-none focus:ring-2 focus:ring-blue-500/30"
             >
               <option value="Active">Active</option>
@@ -385,19 +396,19 @@ function TopicSettingsModal({ topic, onClose, onSave }) {
 
           <div className="space-y-1.5">
             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Description</label>
-            <textarea 
-              value={data.description} 
+            <textarea
+              value={data.description}
               rows={4}
-              onChange={e => setData({...data, description: e.target.value})}
+              onChange={e => setData({ ...data, description: e.target.value })}
               className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-3 text-sm font-bold text-slate-800 outline-none focus:ring-2 focus:ring-blue-500/30 resize-none"
             />
           </div>
 
           <div className="space-y-1.5">
             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Icon Type</label>
-            <select 
-              value={data.icon} 
-              onChange={e => setData({...data, icon: e.target.value})}
+            <select
+              value={data.icon}
+              onChange={e => setData({ ...data, icon: e.target.value })}
               className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-3 text-sm font-bold text-slate-800 outline-none focus:ring-2 focus:ring-blue-500/30"
             >
               <option value="Code2">Code (HTML)</option>
@@ -409,7 +420,7 @@ function TopicSettingsModal({ topic, onClose, onSave }) {
           </div>
         </div>
 
-        <button 
+        <button
           onClick={() => onSave(data)}
           className="w-full mt-4 bg-blue-600 hover:bg-blue-500 text-white py-4 rounded-2xl text-sm font-black transition-all shadow-xl shadow-blue-100"
         >

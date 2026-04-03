@@ -3,8 +3,9 @@ import { useParams, Link } from 'react-router-dom';
 import { useTeachingState } from '../contexts/TeachingContext';
 import TeachingHighlighter from '../components/TeachingHighlighter';
 import CodeBlock from '../components/CodeBlock';
-import { Play, ArrowRight, ArrowLeft } from 'lucide-react';
+import { Play, ArrowRight, ArrowLeft, AlertCircle } from 'lucide-react';
 import clsx from 'clsx';
+import { API_URL } from '../config';
 
 function KaraokeText({ text, isCurrentStep, isAdminMode }) {
   return (
@@ -45,7 +46,7 @@ export default function LessonPage() {
   };
 
   useEffect(() => {
-    fetch('http://localhost:5000/api/lessons')
+    fetch(`${API_URL}/api/lessons`)
       .then(res => res.json())
       .then(data => setLessons(data))
       .catch(err => console.error(err));
@@ -53,13 +54,20 @@ export default function LessonPage() {
 
   useEffect(() => {
     setLoading(true);
-    fetch(`http://localhost:5000/api/lessons/${slug}`)
+    fetch(`${API_URL}/api/lessons/${slug}`)
       .then(res => res.json())
       .then(data => {
-        setLesson(data);
-        setActiveLesson(data);
+        if (data.error) {
+          setLesson(null);
+        } else {
+          setLesson(data);
+          setActiveLesson(data);
+        }
       })
-      .catch(err => console.error(err))
+      .catch(err => {
+        console.error(err);
+        setLesson(null);
+      })
       .finally(() => setLoading(false));
   }, [slug, setActiveLesson]);
 
@@ -89,7 +97,7 @@ export default function LessonPage() {
     const script = block.teachingScript;
     let finalAudioUrl = script.audioUrl;
     if (!finalAudioUrl && script.uploadedName) {
-      finalAudioUrl = `http://localhost:5000/audio/${script.uploadedName}`;
+      finalAudioUrl = `${API_URL}/audio/${script.uploadedName}`;
     }
 
     if (finalAudioUrl) {
@@ -155,7 +163,20 @@ export default function LessonPage() {
     );
   }
 
-  if (!lesson && !loading) return <div className="p-12 text-center text-red-500 font-bold">Lesson not found</div>;
+  if ((!lesson || !lesson.blocks) && !loading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-12">
+        <div className="w-20 h-20 bg-red-50 rounded-3xl flex items-center justify-center mb-6">
+          <AlertCircle size={40} className="text-red-500" />
+        </div>
+        <h2 className="text-2xl font-black text-slate-800 mb-2">Lesson Not Found</h2>
+        <p className="text-slate-500 max-w-sm font-medium mb-8">
+          The requested lesson could not be loaded from the database. It might be missing or still migrating.
+        </p>
+        <Link to="/" className="text-blue-601 font-black uppercase tracking-widest text-[10px] bg-slate-100 px-8 py-4 rounded-2xl hover:bg-slate-200 transition-all">Back to Home</Link>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-4xl mx-auto p-8 pt-12 md:p-12 md:pt-16 lg:p-16 lg:pt-20 relative font-sans animate-entrance w-full">
@@ -175,7 +196,7 @@ export default function LessonPage() {
 
             {lesson.blocks[0] && (
               <TeachingHighlighter stepIndex={0} noIndicator={true}>
-                <h1 
+                <h1
                   className={clsx(
                     "text-4xl md:text-5xl font-extrabold text-slate-900 dark:text-white tracking-tight leading-[1.05] drop-shadow-sm transition-all duration-300",
                     (isActive && currentStep === 0) ? "text-blue-600 dark:text-blue-400 scale-[1.01] origin-left" : "",
@@ -203,8 +224,8 @@ export default function LessonPage() {
 
             if (block.type === 'code') {
               return (
-                <div 
-                  key={block.id} 
+                <div
+                  key={block.id}
                   className={clsx(blockLayoutClass, isActive && currentStep !== actualStep && "cursor-pointer opacity-90 hover:opacity-100")}
                   onClick={() => isActive && currentStep !== actualStep && jumpToStep(actualStep)}
                 >
@@ -221,8 +242,8 @@ export default function LessonPage() {
             }
 
             return (
-              <div 
-                key={block.id} 
+              <div
+                key={block.id}
                 className={clsx(blockLayoutClass, isActive && currentStep !== actualStep && "cursor-pointer hover:opacity-70")}
                 onClick={() => isActive && currentStep !== actualStep && jumpToStep(actualStep)}
               >

@@ -4,20 +4,27 @@ import { Code2, ArrowRight, Layers, Cpu, Mic2, MousePointer2, Sparkles } from 'l
 import clsx from 'clsx';
 import CodeBlock from '../components/CodeBlock';
 import TopNav from '../components/TopNav';
+import { API_URL } from '../config';
 
 export default function LandingPage() {
   const [topics, setTopics] = useState([]);
   const [lessons, setLessons] = useState([]);
 
   useEffect(() => {
-    fetch('http://localhost:5000/api/topics')
+    fetch(`${API_URL}/api/topics`)
       .then(r => r.json())
-      .then(setTopics)
+      .then(data => {
+        if (Array.isArray(data)) setTopics(data);
+        else setTopics([]);
+      })
       .catch(console.error);
 
-    fetch('http://localhost:5000/api/lessons')
+    fetch(`${API_URL}/api/lessons`)
       .then(r => r.json())
-      .then(setLessons)
+      .then(data => {
+        if (Array.isArray(data)) setLessons(data);
+        else setLessons([]);
+      })
       .catch(console.error);
   }, []);
 
@@ -223,9 +230,9 @@ export default function LandingPage() {
 
               <div className="flex flex-wrap justify-center gap-6 md:gap-10">
                 {["Courses", "Pricing", "About", "Community", "Admin"].map(item => (
-                  <Link 
-                    key={item} 
-                    to={item === "Admin" ? "/admin" : "#"} 
+                  <Link
+                    key={item}
+                    to={item === "Admin" ? "/admin" : "#"}
                     className="text-[12px] font-bold text-slate-500 hover:text-slate-900 dark:text-slate-500 dark:hover:text-blue-400 uppercase tracking-widest transition-colors"
                   >
                     {item}

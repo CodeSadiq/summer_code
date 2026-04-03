@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { Code2, Sparkles, Moon, Sun, ArrowRight } from 'lucide-react';
 import { useTeachingState } from '../contexts/TeachingContext';
 import clsx from 'clsx';
+import { API_URL } from '../config';
 
 export default function TopNav() {
   const { isActive, startTeaching, activeLesson } = useTeachingState();
@@ -11,12 +12,12 @@ export default function TopNav() {
   const location = useLocation();
 
   useEffect(() => {
-    fetch('http://localhost:5000/api/topics')
+    fetch(`${API_URL}/api/topics`)
       .then(res => res.json())
       .then(data => setTopics(data))
       .catch(err => console.error('Error fetching topics:', err));
 
-    fetch('http://localhost:5000/api/lessons')
+    fetch(`${API_URL}/api/lessons`)
       .then(res => res.json())
       .then(data => setLessons(data))
       .catch(err => console.error('Error fetching lessons:', err));

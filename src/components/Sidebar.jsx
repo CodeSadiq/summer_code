@@ -3,6 +3,7 @@ import { NavLink, useParams } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, Search, BookOpen } from 'lucide-react';
 import clsx from 'clsx';
 import { useTeachingState } from '../contexts/TeachingContext';
+import { API_URL } from '../config';
 
 export default function Sidebar({ collapsed, setCollapsed }) {
   const { isSidebarOpen, setIsSidebarOpen } = useTeachingState();
@@ -11,12 +12,12 @@ export default function Sidebar({ collapsed, setCollapsed }) {
   const { slug } = useParams();
 
   useEffect(() => {
-    fetch('http://localhost:5000/api/lessons')
+    fetch(`${API_URL}/api/lessons`)
       .then(res => res.json())
       .then(data => setLessons(data))
       .catch(err => console.error(err));
 
-    fetch('http://localhost:5000/api/topics')
+    fetch(`${API_URL}/api/topics`)
       .then(res => res.json())
       .then(data => setTopics(data))
       .catch(err => console.error(err));
@@ -41,7 +42,7 @@ export default function Sidebar({ collapsed, setCollapsed }) {
     <>
       {/* Mobile Backdrop */}
       {isSidebarOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-40 md:hidden"
           onClick={() => setIsSidebarOpen(false)}
         />
@@ -73,9 +74,9 @@ export default function Sidebar({ collapsed, setCollapsed }) {
           <div className="px-4 py-3">
             <div className="relative">
               <Search className="w-4 h-4 text-slate-400 dark:text-slate-500 absolute left-3 top-2.5" />
-              <input 
-                type="text" 
-                placeholder="Search lessons..." 
+              <input
+                type="text"
+                placeholder="Search lessons..."
                 className="w-full pl-9 pr-3 py-2 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg text-sm text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-600 focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all"
               />
             </div>
@@ -130,8 +131,8 @@ export default function Sidebar({ collapsed, setCollapsed }) {
                     to={`/lessons/${slug}`}
                     className={clsx(
                       "px-3 py-2 rounded-lg text-[13px] font-medium transition-colors flex items-center gap-2",
-                      isActiveCourse 
-                        ? "bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400" 
+                      isActiveCourse
+                        ? "bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400"
                         : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-white/5"
                     )}
                   >

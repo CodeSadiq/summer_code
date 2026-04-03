@@ -2,18 +2,19 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Code2, ArrowRight, Sparkles, Layers, Cpu, MousePointer2 } from 'lucide-react';
 import TopNav from '../components/TopNav';
+import { API_URL } from '../config';
 
 export default function AvailableCoursesPage() {
   const [topics, setTopics] = useState([]);
   const [lessons, setLessons] = useState([]);
 
   useEffect(() => {
-    fetch('http://localhost:5000/api/topics')
+    fetch(`${API_URL}/api/topics`)
       .then(r => r.json())
       .then(setTopics)
       .catch(console.error);
 
-    fetch('http://localhost:5000/api/lessons')
+    fetch(`${API_URL}/api/lessons`)
       .then(r => r.json())
       .then(setLessons)
       .catch(console.error);
@@ -22,7 +23,7 @@ export default function AvailableCoursesPage() {
   const getFirstLessonSlug = (courseName) => {
     const courseLessons = lessons.filter(l => l.course === courseName);
     if (courseLessons.length > 0) {
-      return courseLessons.sort((a,b) => (a.chapterOrder || 0) - (b.chapterOrder || 0))[0].slug;
+      return courseLessons.sort((a, b) => (a.chapterOrder || 0) - (b.chapterOrder || 0))[0].slug;
     }
     return null;
   };
@@ -46,8 +47,8 @@ export default function AvailableCoursesPage() {
             const firstSlug = getFirstLessonSlug(course.name);
 
             return (
-              <div 
-                key={course.id} 
+              <div
+                key={course.id}
                 className={`group p-10 rounded-[3rem] bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-white/5 relative overflow-hidden flex flex-col justify-between min-h-[420px] transition-all hover:-translate-y-2 hover:shadow-2xl ${!isActive ? 'opacity-60 grayscale cursor-not-allowed' : ''}`}
               >
                 <div>
@@ -68,7 +69,7 @@ export default function AvailableCoursesPage() {
                     {lessons.filter(l => l.course === course.name).length} Chapters
                   </div>
                   {isActive && firstSlug ? (
-                    <Link 
+                    <Link
                       to={`/lessons/${firstSlug}`}
                       className="w-12 h-12 rounded-full bg-slate-900 dark:bg-blue-600 flex items-center justify-center text-white hover:scale-110 transition-all shadow-lg active:scale-95"
                     >
@@ -92,7 +93,7 @@ export default function AvailableCoursesPage() {
             &copy; 2026 SummerCode Platform.
           </p>
           <div className="flex items-center gap-4">
-             <Link to="/" className="text-xs font-black text-slate-400 hover:text-slate-800 dark:text-slate-600 dark:hover:text-white uppercase tracking-widest">Back to Home</Link>
+            <Link to="/" className="text-xs font-black text-slate-400 hover:text-slate-800 dark:text-slate-600 dark:hover:text-white uppercase tracking-widest">Back to Home</Link>
           </div>
         </div>
       </footer>
