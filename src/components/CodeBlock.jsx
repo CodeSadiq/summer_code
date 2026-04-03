@@ -11,14 +11,20 @@ import { RotateCcw, Play } from 'lucide-react';
 import { useTeachingState } from '../contexts/TeachingContext';
 
 export default function CodeBlock({ visibleText, language, stepIndex, audioDuration }) {
-  const [code, setCode] = useState(visibleText);
-  const [output, setOutput] = useState('');
+  const [code, setCode] = useState(visibleText || '');
+  const [output, setOutput] = useState(visibleText || '');
   const [hasRun, setHasRun] = useState(true);
-  
-  const { 
+
+  const {
     isActive, mode, currentStep, showContinueButton, setShowContinueButton,
     userHasRun, setUserHasRun, setMode, isPaused
   } = useTeachingState();
+
+  // Sync state if prop changes
+  useEffect(() => {
+    setCode(visibleText || '');
+    setOutput(visibleText || '');
+  }, [visibleText]);
 
   const isCurrentBlock = isActive && currentStep === stepIndex;
   const isReadOnly = (isCurrentBlock && (mode === 'BOT_CODING' || mode === 'EXPLAINING' || mode === 'EXPLAINING_CODE')) || (!isCurrentBlock && isActive);
@@ -46,7 +52,7 @@ export default function CodeBlock({ visibleText, language, stepIndex, audioDurat
     if (isCurrentBlock && mode === 'EXPLAINING_CODE' && !isPaused) {
       const sourceText = visibleText || '';
       const chars = sourceText.split('');
-      
+
       let msPerChar = 30;
       if (audioDuration && chars.length > 0) {
         // Reserve 500ms safety buffer so it comfortably finishes just before audio ends
@@ -56,7 +62,7 @@ export default function CodeBlock({ visibleText, language, stepIndex, audioDurat
 
       const typeNextChar = () => {
         if (!isTypingActive) return;
-        
+
         const state = typingState.current;
         if (state.index < chars.length) {
           state.text += chars[state.index] || '';
@@ -69,11 +75,11 @@ export default function CodeBlock({ visibleText, language, stepIndex, audioDurat
           setOutput(sourceText);
         }
       };
-      
+
       // If we are starting fresh, wait 500ms. If resuming from pause, start immediately.
       timeoutId = setTimeout(typeNextChar, typingState.current.index === 0 ? 500 : msPerChar);
     }
-    
+
     return () => {
       isTypingActive = false;
       clearTimeout(timeoutId);
@@ -87,7 +93,7 @@ export default function CodeBlock({ visibleText, language, stepIndex, audioDurat
       return () => clearTimeout(btnTimer);
     }
     if (mode !== 'AT_CODE_BLOCK') {
-       setShowContinueButton(false);
+      setShowContinueButton(false);
     }
   }, [isCurrentBlock, mode, isPaused, setShowContinueButton]);
 
@@ -112,7 +118,7 @@ export default function CodeBlock({ visibleText, language, stepIndex, audioDurat
     return Prism.highlight(codeStr, lg, language);
   };
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 lg:gap-0 rounded-2xl border border-slate-200/60 overflow-hidden shadow-2xl shadow-slate-200/50 my-10 w-full">
+    <div className="grid grid-cols-1 lg:grid-cols-2 lg:gap-0 rounded-2xl border border-slate-200/60 dark:border-white/5 overflow-hidden shadow-2xl shadow-slate-200/50 dark:shadow-none my-10 w-full transition-shadow duration-500">
       {/* Editor Side */}
       <div className="bg-[#0f172a] flex flex-col min-w-0 border-r border-slate-800">
         <div className="h-12 bg-[#0f172a] flex items-center px-4 justify-between border-b border-slate-800">
@@ -127,68 +133,69 @@ export default function CodeBlock({ visibleText, language, stepIndex, audioDurat
           </button>
         </div>
         <div className="flex-1 overflow-auto p-6 text-sm font-mono relative group text-blue-300 min-h-[300px]">
-           {isReadOnly && <div className="absolute inset-0 z-10 cursor-not-allowed"></div>}
-           {React.createElement(Editor.default || Editor, {
-             value: code,
-             onValueChange: c => {
-                 setCode(c);
-                 if(isCurrentBlock && mode === 'AT_CODE_BLOCK') setMode('USER_TRYING');
-             },
-             highlight: highlightWithPrism,
-             padding: 0,
-             textareaClassName: "focus:outline-none",
-             style: {
-               fontFamily: '"JetBrains Mono", "Fira Code", monospace',
-               lineHeight: 1.6,
-             },
-             readOnly: isReadOnly,
-             className: "text-blue-300 w-full h-full",
-             placeholder: `Write some ${language} code...`
-           })}
+          {isReadOnly && <div className="absolute inset-0 z-10 cursor-not-allowed"></div>}
+          {React.createElement(Editor.default || Editor, {
+            value: code,
+            onValueChange: c => {
+              setCode(c);
+              if (isCurrentBlock && mode === 'AT_CODE_BLOCK') setMode('USER_TRYING');
+            },
+            highlight: highlightWithPrism,
+            padding: 0,
+            textareaClassName: "focus:outline-none",
+            style: {
+              fontFamily: '"JetBrains Mono", "Fira Code", monospace',
+              lineHeight: 1.6,
+            },
+            readOnly: isReadOnly,
+            className: "text-blue-300 w-full h-full",
+            placeholder: `Write some ${language} code...`
+          })}
         </div>
       </div>
 
       {/* Preview Side */}
-      <div className="bg-white flex flex-col min-w-0">
-        <div className="h-12 border-b border-slate-100 flex items-center justify-between px-4 bg-white">
-          <div className="flex items-center gap-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+      <div className="bg-white dark:bg-[#1e293b] flex flex-col min-w-0 transition-colors duration-500">
+        <div className="h-12 border-b border-slate-100 dark:border-white/5 flex items-center justify-between px-4 bg-white dark:bg-[#1e293b]">
+          <div className="flex items-center gap-2 text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">
             <span className="w-2 h-2 rounded-full bg-blue-500"></span>
             Preview
           </div>
-          <button 
+          <button
             onClick={handleRun}
             className="flex items-center gap-2 bg-blue-600 text-white hover:bg-blue-700 px-4 py-1.5 rounded-full text-[10px] font-black transition-colors disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-wider"
           >
             <Play size={12} fill="currentColor" /> RUN CODE
           </button>
         </div>
-        <div className="flex-1 p-6 relative bg-white">
-           {!hasRun ? (
-             <div className="flex items-center justify-center h-full text-slate-400 text-[10px] font-bold uppercase tracking-[0.2em]">
-                Waiting for execution...
-             </div>
-           ) : (
-             <iframe 
-               srcDoc={`
+        <div className="flex-1 p-6 relative bg-white dark:bg-white/5">
+          {!hasRun ? (
+            <div className="flex items-center justify-center h-full text-slate-400 dark:text-slate-600 text-[10px] font-bold uppercase tracking-[0.2em]">
+              Waiting for execution...
+            </div>
+          ) : (
+            <iframe
+              srcDoc={`
                  <html>
                    <head>
                      <style>
                        body { 
                          margin: 0; 
                          padding: 0; 
-                         color: #0f172a; 
+                         color: ${window.matchMedia('(prefers-color-scheme: dark)').matches ? '#f1f5f9' : '#0f172a'}; 
                          font-family: system-ui, -apple-system, sans-serif;
+                         background: transparent;
                        }
                      </style>
                    </head>
                    <body>${output}</body>
                  </html>
                `}
-               title="preview"
-               sandbox="allow-scripts allow-modals"
-               className="w-full h-full border-0"
-             />
-           )}
+              title="preview"
+              sandbox="allow-scripts allow-modals"
+              className="w-full h-full border-0"
+            />
+          )}
         </div>
       </div>
     </div>

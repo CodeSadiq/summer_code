@@ -120,6 +120,53 @@ app.put('/api/admin/reorder-lessons', (req, res) => {
   }
 });
 
+const topicsDataPath = path.join(__dirname, 'data', 'topics.json');
+
+app.get('/api/topics', (req, res) => {
+  try {
+    const rawData = fs.readFileSync(topicsDataPath);
+    const topics = JSON.parse(rawData);
+    res.json(topics);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to load topics' });
+  }
+});
+
+app.post('/api/admin/save-topic', (req, res) => {
+  try {
+    const newTopic = req.body;
+    const rawData = fs.readFileSync(topicsDataPath);
+    let topics = JSON.parse(rawData);
+    
+    const index = topics.findIndex(t => t.id === newTopic.id);
+    if (index >= 0) {
+      topics[index] = newTopic;
+    } else {
+      topics.push(newTopic);
+    }
+    
+    fs.writeFileSync(topicsDataPath, JSON.stringify(topics, null, 2));
+    res.json({ success: true, topic: newTopic });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to save topic' });
+  }
+});
+
+app.delete('/api/admin/delete-topic/:topicId', (req, res) => {
+  try {
+    const { topicId } = req.params;
+    const rawData = fs.readFileSync(topicsDataPath);
+    let topics = JSON.parse(rawData);
+    
+    topics = topics.filter(t => t.id !== topicId);
+    
+    fs.writeFileSync(topicsDataPath, JSON.stringify(topics, null, 2));
+    res.json({ success: true, topicId });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to delete topic' });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });

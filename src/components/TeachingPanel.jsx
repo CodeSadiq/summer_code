@@ -46,11 +46,12 @@ export default function TeachingPanel() {
       }}
     >
       {/* Single unified container */}
-      <div className="w-full flex-1 border-l border-slate-200 bg-white overflow-hidden flex flex-col">
+      {/* Single unified container */}
+      <div className="w-full flex-1 border-l border-slate-200 dark:border-white/5 bg-white dark:bg-slate-900 overflow-hidden flex flex-col transition-colors duration-500">
 
         {/* Header */}
-        <div className="px-6 pt-6 pb-5 border-b border-slate-100 text-center">
-          <span className="text-[10px] font-bold tracking-[0.2em] text-slate-500 uppercase select-none">
+        <div className="px-6 pt-6 pb-5 border-b border-slate-100 dark:border-white/5 text-center">
+          <span className="text-[10px] font-bold tracking-[0.2em] text-slate-500 dark:text-slate-400 uppercase select-none">
             Guided Teaching Mode
           </span>
         </div>
@@ -58,7 +59,7 @@ export default function TeachingPanel() {
         {/* Bot face */}
         <div className="flex-1 flex flex-col items-center justify-center py-8 gap-5">
           {/* Outer ring */}
-          <div className="rounded-full p-2 bg-slate-50 border border-slate-100">
+          <div className="rounded-full p-2 bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 transition-colors">
             <div className="relative w-32 h-32 rounded-full bg-slate-900 flex items-center justify-center shadow-inner">
 
               {/* Eyes */}
@@ -87,17 +88,17 @@ export default function TeachingPanel() {
           </div>
 
           {/* Status text */}
-          <p className="text-sm font-medium text-slate-600 px-6 text-center">
+          <p className="text-sm font-medium text-slate-600 dark:text-slate-300 px-6 text-center">
             "{getStatusText()}"
           </p>
         </div>
 
         {/* Controls */}
-        <div className="px-5 pb-6 flex flex-col gap-3 border-t border-slate-100 pt-5">
+        <div className="px-5 pb-6 flex flex-col gap-3 border-t border-slate-100 dark:border-white/5 pt-5">
 
           {/* Wait state */}
           {mode === 'AT_CODE_BLOCK' && !showContinueButton && (
-            <div className="w-full py-3 bg-slate-50 border border-slate-200 text-slate-500 font-semibold rounded-xl flex justify-center items-center gap-2 text-[11px] tracking-widest uppercase">
+            <div className="w-full py-3 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-500 dark:text-slate-400 font-semibold rounded-xl flex justify-center items-center gap-2 text-[11px] tracking-widest uppercase">
               <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
               Your turn to try
             </div>
@@ -108,13 +109,13 @@ export default function TeachingPanel() {
             <div className="flex flex-col gap-2">
               <button
                 onClick={explainLastTopic}
-                className="w-full py-3 rounded-xl border border-slate-200 bg-white text-slate-700 text-[11px] font-bold tracking-widest uppercase flex items-center justify-center gap-2 hover:bg-slate-50 hover:text-blue-600 transition-all active:scale-95"
+                className="w-full py-3 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-slate-700 dark:text-slate-200 text-[11px] font-bold tracking-widest uppercase flex items-center justify-center gap-2 hover:bg-slate-50 dark:hover:bg-white/10 hover:text-blue-600 dark:hover:text-blue-400 transition-all active:scale-95"
               >
                 <RotateCcw size={14} /> Explain Again
               </button>
               <button
                 onClick={continueTeaching}
-                className="w-full py-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-[11px] font-bold tracking-widest uppercase flex items-center justify-center gap-2 transition-all active:scale-95 shadow-sm"
+                className="w-full py-3 rounded-xl bg-slate-900 dark:bg-blue-600 hover:bg-slate-800 dark:hover:bg-blue-500 text-white text-[11px] font-bold tracking-widest uppercase flex items-center justify-center gap-2 transition-all active:scale-95 shadow-sm"
               >
                 Go Ahead <ChevronRight size={16} />
               </button>
@@ -125,58 +126,46 @@ export default function TeachingPanel() {
           {mode === 'USER_TRYING' && userHasRun && (
             <button
               onClick={continueTeaching}
-              className="w-full py-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-[11px] font-bold tracking-widest uppercase flex items-center justify-center gap-2 transition-all active:scale-95 shadow-sm"
+              className="w-full py-3 rounded-xl bg-slate-900 dark:bg-blue-600 hover:bg-slate-800 dark:hover:bg-blue-500 text-white text-[11px] font-bold tracking-widest uppercase flex items-center justify-center gap-2 transition-all active:scale-95 shadow-sm"
             >
               Continue <ChevronRight size={16} />
             </button>
           )}
 
-          {/* Pause / Stop row */}
-          {mode === 'WAITING_TO_TRY' ? (
-            <div className="flex gap-2 h-12">
+          {/* Unified Controls Row */}
+          <div className="flex gap-2 h-12">
+            {/* Primary Action Button (Explain, Pause, or Resume) */}
+            {(mode === 'WAITING_TO_TRY' || mode === 'AT_CODE_BLOCK') ? (
               <button
-                onClick={canExplainCode ? startCodeExplanation : undefined}
-                className={clsx(
-                  "flex-1 rounded-xl flex items-center justify-center gap-2 text-[11px] font-bold tracking-[0.1em] uppercase transition-all shadow-sm",
-                  canExplainCode
-                    ? "bg-emerald-500 hover:bg-emerald-600 text-white active:scale-95 border-emerald-600"
-                    : "bg-amber-50 text-amber-600 border border-amber-200/60 pointer-events-none"
-                )}
+                onClick={startCodeExplanation}
+                className="flex-1 rounded-xl flex items-center justify-center gap-2 text-[11px] font-bold tracking-[0.1em] uppercase transition-all bg-emerald-500 hover:bg-emerald-600 text-white active:scale-95 shadow-sm border-b-2 border-emerald-700"
               >
-                {!canExplainCode ? "Ab aap try kro..." : "Explain Code"}
+                Explain Code
               </button>
-              <button
-                onClick={stopTeaching}
-                className="w-12 rounded-xl bg-white border border-slate-200 flex items-center justify-center hover:bg-red-50 hover:border-red-200 transition-all group active:scale-90"
-                title="Stop Teaching"
-              >
-                <div className="w-3.5 h-3.5 rounded-[3px] bg-slate-400 group-hover:bg-red-500 transition-colors" />
-              </button>
-            </div>
-          ) : (
-            <div className="flex gap-2 h-12">
+            ) : (
               <button
                 onClick={togglePause}
                 className={clsx(
                   "flex-1 rounded-xl flex items-center justify-center gap-2 text-[11px] font-bold tracking-widest uppercase transition-all active:scale-95",
                   isPaused
-                    ? "bg-slate-50 border border-slate-200 text-slate-700 hover:bg-slate-100"
-                    : "bg-slate-900 text-white hover:bg-slate-800 shadow-sm"
+                    ? "bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10"
+                    : "bg-slate-900 dark:bg-blue-600 text-white hover:bg-slate-800 dark:hover:bg-blue-500 shadow-sm"
                 )}
               >
                 {isPaused ? <Play size={14} fill="currentColor" /> : <Pause size={14} fill="currentColor" />}
                 {isPaused ? "Resume" : "Pause"}
               </button>
+            )}
 
-              <button
-                onClick={stopTeaching}
-                className="w-12 rounded-xl bg-white border border-slate-200 flex items-center justify-center hover:bg-red-50 hover:border-red-200 transition-all group active:scale-90"
-                title="Stop Teaching"
-              >
-                <div className="w-3.5 h-3.5 rounded-[3px] bg-slate-400 group-hover:bg-red-500 transition-colors" />
-              </button>
-            </div>
-          )}
+            {/* Stop Button */}
+            <button
+              onClick={stopTeaching}
+              className="w-12 rounded-xl bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 flex items-center justify-center hover:bg-red-50 dark:hover:bg-red-900/20 hover:border-red-200 dark:hover:border-red-900/40 transition-all group active:scale-90"
+              title="Stop Teaching"
+            >
+              <div className="w-3.5 h-3.5 rounded-[3px] bg-slate-400 group-hover:bg-red-500 transition-colors" />
+            </button>
+          </div>
 
         </div>
       </div>

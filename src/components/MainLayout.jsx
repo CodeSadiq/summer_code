@@ -11,13 +11,13 @@ export default function MainLayout({ children }) {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = React.useState(false);
 
   return (
-    <div className="h-screen flex flex-col bg-slate-50 font-sans text-slate-900 overflow-hidden">
+    <div className="h-screen flex flex-col bg-slate-50 dark:bg-slate-950 font-sans text-slate-900 dark:text-slate-100 overflow-hidden transition-colors duration-300">
       <TopNav />
       <div className="flex flex-1 overflow-hidden relative">
         <Sidebar collapsed={isSidebarCollapsed} setCollapsed={setIsSidebarCollapsed} />
         
         <main className={clsx(
-          "flex-1 overflow-y-auto w-full transition-all duration-500 bg-slate-50",
+          "flex-1 overflow-y-auto w-full transition-all duration-500 bg-slate-50 dark:bg-slate-950",
           isSidebarCollapsed ? "md:pl-16" : "md:pl-64",
           "md:pr-[260px]"
         )}>

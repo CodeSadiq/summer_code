@@ -165,8 +165,8 @@ export default function LessonPage() {
               <TeachingHighlighter stepIndex={0} noIndicator={true}>
                 <h1 
                   className={clsx(
-                    "text-4xl md:text-5xl font-extrabold text-slate-900 tracking-tight leading-[1.05] drop-shadow-sm transition-all duration-300",
-                    (isActive && currentStep === 0) ? "text-blue-600 scale-[1.01] origin-left" : "",
+                    "text-4xl md:text-5xl font-extrabold text-slate-900 dark:text-white tracking-tight leading-[1.05] drop-shadow-sm transition-all duration-300",
+                    (isActive && currentStep === 0) ? "text-blue-600 dark:text-blue-400 scale-[1.01] origin-left" : "",
                     (isActive && currentStep !== 0) && "cursor-pointer hover:opacity-70"
                   )}
                   onClick={() => isActive && currentStep !== 0 && jumpToStep(0)}
@@ -218,11 +218,11 @@ export default function LessonPage() {
                   <p className={clsx(
                     "text-lg leading-relaxed transition-all duration-300 w-full md:max-w-2xl",
                     isCurrentBlock
-                      ? "text-slate-900 font-semibold italic"
-                      : "text-slate-600 italic"
+                      ? "text-slate-900 dark:text-white font-semibold italic"
+                      : "text-slate-600 dark:text-slate-400 italic"
                   )}>
                     {isAdminMode && isCurrentBlock
-                      ? <span className="font-bold text-red-600 border-b-4 border-red-100 pb-1">{block.teachingScript?.transcript}</span>
+                      ? <span className="font-bold text-red-600 dark:text-red-400 border-b-4 border-red-100 dark:border-red-900/40 pb-1">{block.teachingScript?.transcript}</span>
                       : <KaraokeText text={block.visibleText} isCurrentStep={isCurrentBlock} isAdminMode={isAdminMode} />
                     }
                   </p>
@@ -234,14 +234,14 @@ export default function LessonPage() {
       </div>
 
       {/* Footer Navigation */}
-      <div className="relative z-10 mt-20 pt-8 border-t border-slate-200 flex flex-col md:flex-row justify-between items-center gap-6 pb-12 transition-all duration-300">
+      <div className="relative z-10 mt-20 pt-8 border-t border-slate-200 dark:border-white/5 flex flex-col md:flex-row justify-between items-center gap-6 pb-12 transition-all duration-300">
         <div className="flex-1 w-full md:w-auto">
           {prevLesson ? (
             <Link
               to={`/lessons/${prevLesson.slug}`}
-              className="flex items-center gap-3 text-slate-500 hover:text-slate-900 transition-colors group"
+              className="flex items-center gap-3 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors group"
             >
-              <div className="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center shrink-0 group-hover:border-slate-300">
+              <div className="w-8 h-8 rounded-full border border-slate-200 dark:border-white/10 flex items-center justify-center shrink-0 group-hover:border-slate-300 dark:group-hover:border-white/20">
                 <ArrowLeft size={16} />
               </div>
               <span className="text-sm font-semibold">{prevLesson.title}</span>
@@ -255,15 +255,15 @@ export default function LessonPage() {
           {nextLesson ? (
             <Link
               to={`/lessons/${nextLesson.slug}`}
-              className="flex items-center gap-3 text-slate-500 hover:text-slate-900 transition-colors group flex-row-reverse"
+              className="flex items-center gap-3 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors group flex-row-reverse"
             >
-              <div className="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center shrink-0 group-hover:border-slate-300">
+              <div className="w-8 h-8 rounded-full border border-slate-200 dark:border-white/10 flex items-center justify-center shrink-0 group-hover:border-slate-300 dark:group-hover:border-white/20">
                 <ArrowRight size={16} />
               </div>
               <span className="text-sm font-semibold">{nextLesson.title}</span>
             </Link>
           ) : (
-            <div className="text-sm font-semibold text-slate-400">End of Course</div>
+            <div className="text-sm font-semibold text-slate-400 dark:text-slate-600">End of Course</div>
           )}
         </div>
       </div>

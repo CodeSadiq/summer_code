@@ -151,3 +151,12 @@
 .animate-bloom {
   animation: subtle-bloom 3s ease-in-out infinite;
 }
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

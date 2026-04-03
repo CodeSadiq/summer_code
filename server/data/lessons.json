@@ -3,6 +3,7 @@
     "id": "html-introduction",
     "slug": "html-introduction",
     "title": "HTML Introduction",
+    "course": "HTML",
     "description": "",
     "chapterOrder": 1,
     "blocks": [
@@ -66,8 +67,9 @@
     "id": "html-element",
     "slug": "html-element",
     "title": "HTML Element",
+    "course": "HTML",
     "description": "",
-    "chapterOrder": 1,
+    "chapterOrder": 2,
     "blocks": [
       {
         "id": "block-1774932092021-jiuqi",
@@ -78,6 +80,27 @@
           "transcript": "",
           "action": "speak",
           "duration": 3000
+        }
+      }
+    ]
+  },
+  {
+    "id": "introduction-of-css",
+    "slug": "introduction-of-css",
+    "title": "introduction of css",
+    "course": "CSS",
+    "description": "",
+    "chapterOrder": 1,
+    "blocks": [
+      {
+        "id": "block-1775232209192-h2jw0",
+        "type": "heading",
+        "visibleText": "Introduction of CSS\n",
+        "teachingScript": {
+          "step": 0,
+          "transcript": "",
+          "action": "speak",
+          "duration": 3500
         }
       }
     ]
