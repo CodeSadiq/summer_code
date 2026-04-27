@@ -2,10 +2,14 @@
   "name": "summer-code-monorepo",
   "version": "1.0.0",
   "private": true,
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
   "scripts": {
-    "install:all": "npm install && cd frontend && npm install && cd ../backend && npm install",
-    "frontend": "cd frontend && npm run dev",
-    "backend": "cd backend && npm run dev",
-    "dev": "echo 'Run \"npm run frontend\" and \"npm run backend\" in separate terminals for best experience.'"
+    "build": "npm run build -w frontend",
+    "frontend": "npm run dev -w frontend",
+    "backend": "npm run dev -w backend",
+    "install:all": "npm install"
   }
 }
