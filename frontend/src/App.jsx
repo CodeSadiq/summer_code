@@ -19,19 +19,21 @@ const ProtectedRoute = ({ children }) => {
 };
 
 
+import PublicLayout from './components/PublicLayout';
+
 function App() {
   return (
     <BrowserRouter>
       <TeachingProvider>
         <Routes>
-          <Route path="/" element={<LandingPage />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/admin-login" element={<AdminLoginPage />} />
-          <Route path="/profile" element={<ProfilePage />} />
-          <Route path="/courses" element={<AvailableCoursesPage />} />
+          <Route path="/" element={<PublicLayout><LandingPage /></PublicLayout>} />
+          <Route path="/login" element={<PublicLayout><LoginPage /></PublicLayout>} />
+          <Route path="/admin-login" element={<PublicLayout><AdminLoginPage /></PublicLayout>} />
+          <Route path="/profile" element={<PublicLayout><ProfilePage /></PublicLayout>} />
+          <Route path="/courses" element={<PublicLayout><AvailableCoursesPage /></PublicLayout>} />
 
           <Route path="/lessons/:slug" element={<MainLayout><LessonPage /></MainLayout>} />
-          
+
           {/* Protected Admin routes */}
           <Route path="/admin" element={
             <ProtectedRoute>

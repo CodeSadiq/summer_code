@@ -9,11 +9,13 @@
     "start": "node index.js"
   },
   "dependencies": {
+    "@elevenlabs/elevenlabs-js": "^2.45.0",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
     "google-auth-library": "^10.6.2",
     "mongoose": "^8.3.4",
-    "multer": "^2.1.1"
+    "multer": "^2.1.1",
+    "node-fetch": "^3.3.2"
   }
 }

@@ -3,7 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { useTeachingState } from '../contexts/TeachingContext';
 import TeachingHighlighter from '../components/TeachingHighlighter';
 import CodeBlock from '../components/CodeBlock';
-import { Play, ArrowRight, ArrowLeft, AlertCircle } from 'lucide-react';
+import { Play, ArrowRight, ArrowLeft, AlertCircle, Sparkles } from 'lucide-react';
 import clsx from 'clsx';
 import { API_URL } from '../config';
 
@@ -24,11 +24,11 @@ export default function LessonPage() {
   const [lesson, setLesson] = useState(null);
   const [lessons, setLessons] = useState([]);
   const [loading, setLoading] = useState(true);
-
   const {
     isActive, currentStep, isAdminMode,
     setIsSpeaking, mode, isPaused,
-    setActiveLesson, continueTeaching, activeLesson, jumpToStep
+    setActiveLesson, continueTeaching, activeLesson, jumpToStep,
+    isEnglish, setIsEnglish
   } = useTeachingState();
 
   const audioRef = useRef(null);
@@ -85,14 +85,14 @@ export default function LessonPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: studentData.email, lessonSlug: slug })
       })
-      .then(res => res.json())
-      .then(data => {
-        if (data.success) {
-          const updatedData = { ...studentData, completedLessons: data.completedLessons };
-          localStorage.setItem('studentData', JSON.stringify(updatedData));
-        }
-      })
-      .catch(err => console.error('Error saving progress:', err));
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            const updatedData = { ...studentData, completedLessons: data.completedLessons };
+            localStorage.setItem('studentData', JSON.stringify(updatedData));
+          }
+        })
+        .catch(err => console.error('Error saving progress:', err));
     }
   }, [slug, setActiveLesson]);
 
@@ -113,22 +113,23 @@ export default function LessonPage() {
     }
 
     const block = lesson.blocks[currentStep];
-    if (!block?.teachingScript) {
+    const script = isEnglish ? block?.englishTeachingScript : block?.teachingScript;
+    
+    if (!script) {
       setIsSpeaking(false);
       return;
     }
 
     setIsSpeaking(true);
-    const script = block.teachingScript;
     let finalAudioUrl = script.audioUrl;
-    
+
     // Fix: If audioUrl points to the old static path, or we only have a filename, 
     // re-map it to the database-backed endpoint.
     if (!finalAudioUrl && script.uploadedName) {
       finalAudioUrl = `${API_URL}/api/audio-db/${script.uploadedName}`;
     } else if (finalAudioUrl && !finalAudioUrl.startsWith('http')) {
       // Prepend API_URL to relative paths and handle migration replacement
-      const relativePath = finalAudioUrl.includes('/audio/') 
+      const relativePath = finalAudioUrl.includes('/audio/')
         ? finalAudioUrl.replace('/audio/', '/api/audio-db/')
         : finalAudioUrl;
       finalAudioUrl = `${API_URL}${relativePath}`;
@@ -161,7 +162,7 @@ export default function LessonPage() {
       }, script.duration || 3500);
       return () => clearTimeout(timer);
     }
-  }, [isActive, mode, currentStep, lesson, setIsSpeaking]);
+  }, [isActive, mode, currentStep, lesson, setIsSpeaking, isEnglish]);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -226,9 +227,24 @@ export default function LessonPage() {
         {/* Header Section */}
         <header className="mb-8">
           <div className="flex flex-col">
-            <span className="text-blue-600 font-bold tracking-widest text-[10px] uppercase mb-2">
-              CHAPTER {String(lesson.chapterOrder || (currentIdx + 1)).padStart(2, '0')}
-            </span>
+            <div className="flex items-center justify-between mb-4">
+              <span className="text-blue-600 font-bold tracking-widest text-[10px] uppercase">
+                CHAPTER {String(lesson.chapterOrder || (currentIdx + 1)).padStart(2, '0')}
+              </span>
+
+              <button
+                onClick={() => setIsEnglish(!isEnglish)}
+                className={clsx(
+                  "flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border-2",
+                  isEnglish
+                    ? "bg-emerald-500 border-emerald-500 text-white shadow-lg shadow-emerald-100"
+                    : "bg-white border-slate-200 text-slate-400 hover:border-emerald-500 hover:text-emerald-600"
+                )}
+              >
+                <Sparkles size={14} />
+                {isEnglish ? "Check in Hinglish" : "Check in English"}
+              </button>
+            </div>
 
             {lesson.blocks[0] && (
               <TeachingHighlighter stepIndex={0} noIndicator={true}>
@@ -240,7 +256,13 @@ export default function LessonPage() {
                   )}
                   onClick={() => isActive && currentStep !== 0 && jumpToStep(0)}
                 >
-                  {isAdminMode && (isActive && currentStep === 0) ? lesson.blocks[0].teachingScript?.transcript : lesson.blocks[0].visibleText}
+                  {(() => {
+                    if (isAdminMode && isActive && currentStep === 0) {
+                      return isEnglish ? (lesson.blocks[0].englishTeachingScript?.transcript || lesson.blocks[0].teachingScript?.transcript) : lesson.blocks[0].teachingScript?.transcript;
+                    }
+                    const txt = (isEnglish && lesson.blocks[0].englishText) ? lesson.blocks[0].englishText : lesson.blocks[0].visibleText;
+                    return txt;
+                  })()}
                 </h1>
               </TeachingHighlighter>
             )}
@@ -270,7 +292,7 @@ export default function LessonPage() {
                       visibleText={block.visibleText}
                       language={block.language || 'html'}
                       stepIndex={actualStep}
-                      audioDuration={block.teachingScript?.duration}
+                      audioDuration={isEnglish ? block.englishTeachingScript?.duration : block.teachingScript?.duration}
                     />
                   </TeachingHighlighter>
                 </div>
@@ -285,14 +307,22 @@ export default function LessonPage() {
               >
                 <TeachingHighlighter stepIndex={actualStep} hasCodeBlock={false}>
                   <p className={clsx(
-                    "text-lg leading-relaxed transition-all duration-300 w-full md:max-w-2xl",
+                    "text-xl leading-relaxed transition-all duration-300 w-full md:max-w-2xl",
                     isCurrentBlock
-                      ? "text-slate-900 dark:text-white font-semibold italic"
-                      : "text-slate-600 dark:text-slate-400 italic"
+                      ? "text-slate-900 dark:text-white font-bold"
+                      : "text-slate-700 dark:text-slate-300 font-medium"
                   )}>
                     {isAdminMode && isCurrentBlock
-                      ? <span className="font-bold text-red-600 dark:text-red-400 border-b-4 border-red-100 dark:border-red-900/40 pb-1">{block.teachingScript?.transcript}</span>
-                      : <KaraokeText text={block.visibleText} isCurrentStep={isCurrentBlock} isAdminMode={isAdminMode} />
+                      ? (
+                        <span className="font-bold text-red-600 dark:text-red-400 border-b-4 border-red-100 dark:border-red-900/40 pb-1">
+                          {isEnglish ? (block.englishTeachingScript?.transcript || block.teachingScript?.transcript) : block.teachingScript?.transcript}
+                        </span>
+                      )
+                      : <KaraokeText
+                        text={(isEnglish && block.englishText) ? block.englishText : block.visibleText}
+                        isCurrentStep={isCurrentBlock}
+                        isAdminMode={isAdminMode}
+                      />
                     }
                   </p>
                 </TeachingHighlighter>

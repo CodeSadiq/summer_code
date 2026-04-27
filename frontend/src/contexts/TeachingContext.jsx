@@ -16,6 +16,7 @@ export function TeachingProvider({ children }) {
   const [currentWordIndex, setCurrentWordIndex] = useState(-1);
   const [isAdminMode, setIsAdminMode] = useState(false);
   const [activeLesson, setActiveLesson] = useState(null);
+  const [isEnglish, setIsEnglish] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const location = useLocation();
@@ -26,6 +27,9 @@ export function TeachingProvider({ children }) {
       stopTeaching();
     }
     
+    // If in English mode, we don't start teaching (as per request)
+    if (isEnglish) return;
+
     setActiveLesson(lesson);
     setIsActive(true);
     setCurrentStep(0);
@@ -54,6 +58,13 @@ export function TeachingProvider({ children }) {
       stopTeaching();
     }
   }, [location.pathname, isActive]);
+
+  // Turn off teaching when switching to English
+  useEffect(() => {
+    if (isEnglish && isActive) {
+      stopTeaching();
+    }
+  }, [isEnglish, isActive]);
 
   const explainTopic = () => {
     setMode('BOT_CODING');
@@ -131,6 +142,7 @@ export function TeachingProvider({ children }) {
     isAdminMode, setIsAdminMode,
     activeLesson, setActiveLesson,
     isSidebarOpen, setIsSidebarOpen,
+    isEnglish, setIsEnglish,
     startTeaching, stopTeaching, togglePause, continueTeaching, explainTopic, explainLastTopic,
     startCodeExplanation, jumpToStep
   };

@@ -4,10 +4,10 @@ import TopNav from './TopNav';
 import Sidebar from './Sidebar';
 import TeachingPanel from './TeachingPanel';
 import clsx from 'clsx';
-import { Play, ChevronRight, Menu } from 'lucide-react';
+import { Play, ChevronRight, Menu, ArrowRight, Ban } from 'lucide-react';
 
 export default function MainLayout({ children }) {
-  const { isActive, startTeaching, activeLesson, isSidebarOpen, setIsSidebarOpen } = useTeachingState();
+  const { isActive, startTeaching, activeLesson, isSidebarOpen, setIsSidebarOpen, isEnglish, continueTeaching } = useTeachingState();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = React.useState(false);
 
   // Swipe gesture state
@@ -42,7 +42,7 @@ export default function MainLayout({ children }) {
 
   return (
     <div
-      className="h-screen flex flex-col bg-slate-50 dark:bg-slate-950 font-sans text-slate-900 dark:text-slate-100 overflow-hidden"
+      className="h-screen flex flex-col bg-slate-50 font-sans text-slate-900 overflow-hidden"
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
@@ -55,7 +55,7 @@ export default function MainLayout({ children }) {
         {!isSidebarOpen && (
           <button
             onClick={() => setIsSidebarOpen(true)}
-            className="md:hidden fixed left-0 top-[20%] w-3 h-20 bg-blue-600 dark:bg-blue-500 rounded-r-2xl z-40 shadow-[4px_0_15px_-5px_rgba(37,99,235,0.4)] flex items-center justify-center transition-all active:w-6 active:bg-blue-700"
+            className="md:hidden fixed left-0 top-[20%] w-3 h-20 bg-blue-600 rounded-r-2xl z-40 shadow-[4px_0_15px_-5px_rgba(37,99,235,0.4)] flex items-center justify-center transition-all active:w-6 active:bg-blue-700"
             aria-label="Toggle Sidebar"
           >
             <div className="w-1 h-8 bg-white/50 rounded-full" />
@@ -63,7 +63,7 @@ export default function MainLayout({ children }) {
         )}
 
         <main className={clsx(
-          "flex-1 overflow-y-auto w-full transition-all duration-500 bg-slate-50 dark:bg-slate-950",
+          "flex-1 overflow-y-auto w-full transition-all duration-500 bg-slate-50",
           "pl-0",
           isSidebarCollapsed ? "md:pl-16" : "md:pl-64",
           "md:pr-[260px]"
@@ -74,14 +74,31 @@ export default function MainLayout({ children }) {
         {/* The Teaching Panel */}
         <TeachingPanel />
 
-        {/* Mobile FAB to start teaching when not active */}
-        {!isActive && activeLesson && (
+        {/* Mobile FAB to start teaching or skip */}
+        {activeLesson && location.pathname.startsWith('/lessons/') && (
           <button
-            onClick={() => startTeaching(activeLesson)}
-            className="md:hidden fixed bottom-6 right-6 bg-blue-600 dark:bg-blue-500 text-white rounded-full px-4 py-2.5 shadow-2xl z-40 animate-pulse flex items-center gap-2 font-bold text-[11px] tracking-wider uppercase border-b-2 border-blue-800"
+            onClick={(!isActive && !isEnglish) ? () => startTeaching(activeLesson) : undefined}
+            className={clsx(
+              "md:hidden fixed bottom-6 right-6 rounded-full px-5 py-2.5 shadow-2xl z-40 flex items-center gap-2 font-bold text-[11px] tracking-wider uppercase border-b-2 transition-all active:scale-95",
+              isActive 
+                ? "bg-slate-100 text-slate-400 border-slate-200 cursor-default" 
+                : isEnglish
+                  ? "bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed opacity-80"
+                  : "bg-blue-600 text-white border-blue-800 animate-pulse"
+            )}
+            title={isEnglish ? "Guided teaching is not available in English mode" : ""}
           >
-            <Play fill="currentColor" size={14} />
-            Teach
+            {isEnglish ? (
+              <>
+                <Ban size={14} />
+                Unavailable
+              </>
+            ) : (
+              <>
+                <Play fill="currentColor" size={14} className={clsx(isActive ? "text-slate-300" : "text-white")} />
+                {isActive ? "Active" : "Teach"}
+              </>
+            )}
           </button>
         )}
       </div>

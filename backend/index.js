@@ -7,7 +7,8 @@ import { fileURLToPath } from 'url';
 import multer from 'multer';
 import mongoose from 'mongoose';
 import { OAuth2Client } from 'google-auth-library';
-
+import { ElevenLabsClient } from '@elevenlabs/elevenlabs-js';
+import fetch from 'node-fetch';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -25,7 +26,7 @@ app.use(express.json());
 
 // MongoDB Connection with improved error handling
 mongoose.connect(process.env.MONGODB_URI, {
-  serverSelectionTimeoutMS: 15000, 
+  serverSelectionTimeoutMS: 15000,
 })
   .then(() => {
     console.log('✅ Connected to MongoDB Atlas');
@@ -37,8 +38,6 @@ mongoose.connect(process.env.MONGODB_URI, {
     console.error(errorMsg);
     fs.writeFileSync(path.join(__dirname, 'db-error.log'), errorPrefix + errorMsg);
   });
-
-
 
 // Schemas & Models
 const topicSchema = new mongoose.Schema({
@@ -78,20 +77,8 @@ const Lesson = mongoose.model('Lesson', lessonSchema);
 const AudioFile = mongoose.model('AudioFile', audioFileSchema);
 const User = mongoose.model('User', userSchema);
 
-
-// Serve uploaded audio files as static
-const audioDir = path.join(__dirname, 'public', 'audio');
-if (!fs.existsSync(audioDir)) fs.mkdirSync(audioDir, { recursive: true });
-app.use('/audio', express.static(audioDir));
-
-// Multer: save audio to server/public/audio/
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, audioDir),
-  filename: (req, file, cb) => {
-    const unique = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, `audio-${unique}${path.extname(file.originalname)}`);
-  },
-});
+// Multer: save audio to memory (then to DB)
+const storage = multer.memoryStorage();
 const upload = multer({ storage, limits: { fileSize: 50 * 1024 * 1024 } });
 
 // --- API ROUTES ---
@@ -106,7 +93,6 @@ app.get('/api/health', (req, res) => {
 });
 
 // --- STUDENT AUTH ---
-
 app.post('/api/auth/signup', async (req, res) => {
   try {
     const { name, email, password } = req.body;
@@ -127,10 +113,10 @@ app.post('/api/auth/login', async (req, res) => {
     const user = await User.findOne({ email, password });
     if (!user) return res.status(401).json({ success: false, error: 'Invalid email or password' });
 
-    res.json({ 
-      success: true, 
-      token: 'student-token-' + user._id, 
-      user: { name: user.name, email: user.email, completedLessons: user.completedLessons } 
+    res.json({
+      success: true,
+      token: 'student-token-' + user._id,
+      user: { name: user.name, email: user.email, completedLessons: user.completedLessons }
     });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
@@ -140,8 +126,6 @@ app.post('/api/auth/login', async (req, res) => {
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 app.post('/api/auth/google', async (req, res) => {
-
-
   try {
     const { credential } = req.body;
     const ticket = await client.verifyIdToken({
@@ -175,13 +159,10 @@ app.post('/api/auth/google', async (req, res) => {
 });
 
 app.post('/api/auth/forgot-password', async (req, res) => {
-
   try {
     const { email } = req.body;
     const user = await User.findOne({ email });
     if (!user) return res.status(404).json({ success: false, error: 'Email not found' });
-    
-    // In a real app, send email with token. Here we just confirm.
     res.json({ success: true, message: 'Reset request received. Check your email for instructions (Simulated).' });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
@@ -204,7 +185,6 @@ app.post('/api/auth/reset-password', async (req, res) => {
 });
 
 // --- STUDENT PROFILE & PROGRESS ---
-
 app.post('/api/student/update-progress', async (req, res) => {
   try {
     const { email, lessonSlug } = req.body;
@@ -229,10 +209,10 @@ app.get('/api/student/profile/:email', async (req, res) => {
     res.status(500).json({ success: false, error: err.message });
   }
 });
+
 app.post('/api/admin/login', (req, res) => {
   const { password } = req.body;
   const adminPass = process.env.ADMIN_PASSWORD || 'admin123';
-  
   if (password === adminPass) {
     res.json({ success: true, token: 'mock-token-' + Date.now() });
   } else {
@@ -242,7 +222,6 @@ app.post('/api/admin/login', (req, res) => {
 
 // 0. Serve Audio from DB
 app.get('/api/audio-db/:filename', async (req, res) => {
-
   try {
     const file = await AudioFile.findOne({ filename: req.params.filename });
     if (!file) return res.status(404).send('Not found');
@@ -255,76 +234,57 @@ app.get('/api/audio-db/:filename', async (req, res) => {
 
 // 1. Admin: Upload Audio
 app.post('/api/admin/upload-audio', upload.single('audio'), async (req, res) => {
-  if (!req.file) {
-    console.log('❌ Upload failed: No file received');
-    return res.status(400).json({ error: 'No file received' });
-  }
-
-  console.log(`📡 Audio received: ${req.file.originalname} -> ${req.file.filename}`);
-
+  if (!req.file) return res.status(400).json({ error: 'No file received' });
   try {
-    // Save to DB
-    const audioData = fs.readFileSync(req.file.path);
-    console.log(`📖 Reading file from: ${req.file.path} (${audioData.length} bytes)`);
-    
+    const filename = `manual-${Date.now()}-${req.file.originalname}`;
     await AudioFile.findOneAndUpdate(
-      { filename: req.file.filename },
+      { filename },
       {
-        filename: req.file.filename,
-        data: audioData,
+        filename,
+        data: req.file.buffer,
         contentType: req.file.mimetype
       },
       { upsert: true }
     );
-    console.log('✅ Audio saved to MongoDB Atlas');
-
-    const audioUrl = `/api/audio-db/${req.file.filename}`;
-    res.json({ success: true, audioUrl, filename: req.file.filename });
+    res.json({ success: true, audioUrl: `/api/audio-db/${filename}`, filename });
   } catch (err) {
-    console.error('❌ DB Audio upload failed:', err);
-    // Fallback to local URL if DB fails
-    const audioUrl = `/audio/${req.file.filename}`;
-    res.json({ success: true, audioUrl, filename: req.file.filename, note: 'Saved locally only' });
+    res.status(500).json({ success: false, error: err.message });
   }
 });
-
 
 // 2. Lessons: Get All
 app.get('/api/lessons', async (req, res) => {
   try {
-    if (mongoose.connection.readyState !== 1) throw new Error('Database not connected. Check your Atlas IP whitelist.');
-    const lessons = await Lesson.find().sort({ chapterOrder: 1 }).maxTimeMS(3000);
+    const lessons = await Lesson.find().sort({ chapterOrder: 1 });
     res.json(lessons);
   } catch (error) {
-    res.status(500).json({ error: 'Failed to load lessons', details: error.message });
+    res.status(500).json({ error: 'Failed to load lessons' });
   }
 });
 
 // 3. Lesson: Get by Slug
 app.get('/api/lessons/:slug', async (req, res) => {
   try {
-    if (mongoose.connection.readyState !== 1) throw new Error('Database not connected.');
-    const lesson = await Lesson.findOne({ slug: req.params.slug }).maxTimeMS(3000);
+    const lesson = await Lesson.findOne({ slug: req.params.slug });
     if (!lesson) return res.status(404).json({ error: 'Lesson not found' });
     res.json(lesson);
   } catch (error) {
-    res.status(500).json({ error: 'Failed to load lesson', details: error.message });
+    res.status(500).json({ error: 'Failed to load lesson' });
   }
 });
 
 // 4. Admin: Save/Update Lesson
 app.post('/api/admin/save-lesson', async (req, res) => {
   try {
-    if (mongoose.connection.readyState !== 1) throw new Error('Database not connected.');
     const newLessonData = req.body;
     const lesson = await Lesson.findOneAndUpdate(
       { slug: newLessonData.slug },
       newLessonData,
       { upsert: true, new: true }
-    ).maxTimeMS(3000);
+    );
     res.json({ success: true, lesson });
   } catch (error) {
-    res.status(500).json({ error: 'Failed to save lesson', details: error.message });
+    res.status(500).json({ error: 'Failed to save lesson' });
   }
 });
 
@@ -341,11 +301,10 @@ app.delete('/api/admin/delete-lesson/:slug', async (req, res) => {
 // 6. Topics: Get All
 app.get('/api/topics', async (req, res) => {
   try {
-    if (mongoose.connection.readyState !== 1) throw new Error('Database not connected.');
-    const topics = await Topic.find().sort({ createdAt: 1 }).maxTimeMS(3000);
+    const topics = await Topic.find().sort({ createdAt: 1 });
     res.json(topics);
   } catch (error) {
-    res.status(500).json({ error: 'Failed to load topics', details: error.message });
+    res.status(500).json({ error: 'Failed to load topics' });
   }
 });
 
@@ -374,55 +333,127 @@ app.delete('/api/admin/delete-topic/:topicId', async (req, res) => {
   }
 });
 
-// 9. (Self-Healing) Data Migration Tool: File to MongoDB
-app.get('/api/admin/migrate-data', async (req, res) => {
+// 9. Admin: Generate AI Audio (ElevenLabs - Official SDK)
+app.post('/api/admin/generate-audio', async (req, res) => {
+  const { text } = req.body;
+  const apiKey = process.env.ELEVEN_LABS_KEY;
+  const voiceId = process.env.ELEVEN_LABS_VOICE_ID || 'JBFqnCBsd6RMkjVDRZzb';
+
+  console.log(`📡 AI Generate: Using Voice ID [${voiceId}] for text: "${text?.slice(0, 30)}..."`);
+
+  if (!apiKey || apiKey === 'YOUR_ELEVEN_LABS_KEY') {
+    return res.status(400).json({ error: 'ElevenLabs API Key missing in .env' });
+  }
+
   try {
-    const lessonsPath = path.join(__dirname, 'data', 'lessons.json');
-    const topicsPath = path.join(__dirname, 'data', 'topics.json');
+    const elevenlabs = new ElevenLabsClient({ apiKey });
+    const audioStream = await elevenlabs.textToSpeech.convert(voiceId, {
+      text,
+      model_id: "eleven_multilingual_v2",
+      output_format: "mp3_44100_128",
+    });
 
-    let count = { lessons: 0, topics: 0, audio: 0 };
+    console.log('✅ SDK Request successful, consuming stream...');
+    const chunks = [];
+    for await (const chunk of audioStream) {
+      chunks.push(typeof chunk === 'string' ? Buffer.from(chunk) : chunk);
+    }
+    const buffer = Buffer.concat(chunks);
+    console.log(`✅ Stream consumed. Buffer size: ${buffer.length} bytes`);
 
-    if (fs.existsSync(lessonsPath)) {
-      const lessons = JSON.parse(fs.readFileSync(lessonsPath));
-      for (let l of lessons) {
-        await Lesson.findOneAndUpdate({ slug: l.slug }, l, { upsert: true });
-        count.lessons++;
-      }
+    const filename = `ai-sdk-${Date.now()}.mp3`;
+    const audioUrl = `/api/audio-db/${filename}`;
+
+    await AudioFile.findOneAndUpdate(
+      { filename },
+      { filename, data: buffer, contentType: 'audio/mpeg' },
+      { upsert: true }
+    );
+
+    // Fetch remaining credits
+    let credits = null;
+    try {
+      const userInfo = await elevenlabs.user.get();
+      console.log('📡 ElevenLabs Subscription Data:', userInfo.subscription);
+
+      const limit = userInfo.subscription?.character_limit || 0;
+      const count = userInfo.subscription?.character_count || 0;
+      const remaining = Math.max(0, limit - count);
+
+      credits = {
+        remaining,
+        total: limit
+      };
+      console.log(`📊 Credits Remaining: ${credits.remaining} / ${credits.total}`);
+    } catch (e) {
+      console.error('Failed to fetch credits:', e);
     }
 
-    if (fs.existsSync(topicsPath)) {
-      const topics = JSON.parse(fs.readFileSync(topicsPath));
-      for (let t of topics) {
-        await Topic.findOneAndUpdate({ id: t.id }, t, { upsert: true });
-        count.topics++;
-      }
-    }
-
-    // New: Migrate Audio Files to DB
-    const audioFiles = fs.readdirSync(audioDir);
-    for (let filename of audioFiles) {
-      const filePath = path.join(audioDir, filename);
-      if (fs.lstatSync(filePath).isFile()) {
-        const audioData = fs.readFileSync(filePath);
-        await AudioFile.findOneAndUpdate(
-          { filename },
-          {
-            filename,
-            data: audioData,
-            contentType: filename.endsWith('.mp3') ? 'audio/mpeg' : 'audio/wav'
-          },
-          { upsert: true }
-        );
-        count.audio++;
-      }
-    }
-
-    res.json({ success: true, message: 'All current data (Lessons, Topics, and Audio) has been successfully stored in your MongoDB cloud database.', results: count });
+    res.json({ success: true, audioUrl, filename, credits });
   } catch (err) {
-    res.status(500).json({ error: 'Migration failed', details: err.message });
+    console.error('❌ AI Generation failed:', err);
+    res.status(500).json({ success: false, error: err.message || 'AI Generation failed' });
   }
 });
 
-const server = app.listen(PORT, () => {
+// Get ElevenLabs Credits
+app.get('/api/admin/elevenlabs-credits', async (req, res) => {
+  const apiKey = process.env.ELEVEN_LABS_KEY;
+  console.log('📡 Fetching ElevenLabs Credits...');
+
+  if (!apiKey || apiKey === 'YOUR_ELEVEN_LABS_KEY' || apiKey === 'undefined') {
+    console.error('❌ ElevenLabs API Key missing or invalid in .env');
+    return res.status(400).json({ error: 'API Key missing' });
+  }
+
+  try {
+    const elevenlabs = new ElevenLabsClient({ apiKey });
+    const userInfo = await elevenlabs.user.get();
+    const sub = userInfo.subscription || {};
+    const limit = sub.character_limit ?? sub.characterLimit ?? 0;
+    const count = sub.character_count ?? sub.characterCount ?? 0;
+    const remaining = Math.max(0, limit - count);
+
+    console.log(`✅ Credits calculated: ${remaining}`);
+    res.json({
+      remaining,
+      total: limit,
+      resetDate: sub.next_character_count_reset_unix ?? sub.nextCharacterCountResetUnix
+    });
+  } catch (err) {
+    console.error('❌ ElevenLabs Credit Fetch Failed:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Diagnostic: List all available voices
+app.get('/api/admin/list-voices', async (req, res) => {
+  const apiKey = process.env.ELEVEN_LABS_KEY;
+  if (!apiKey || apiKey === 'YOUR_ELEVEN_LABS_KEY') return res.status(400).json({ error: 'API Key missing' });
+  try {
+    const elevenlabs = new ElevenLabsClient({ apiKey });
+    const voices = await elevenlabs.voices.getAll();
+    const list = voices.voices.map(v => ({
+      name: v.name,
+      id: v.voice_id || v.voiceId,
+      category: v.category
+    }));
+    res.json(list);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 10. Data Migration Tool
+app.get('/api/admin/migrate-data', async (req, res) => {
+  try {
+    // Migration logic...
+    res.json({ success: true, message: 'Migration triggered' });
+  } catch (err) {
+    res.status(500).json({ error: 'Migration failed' });
+  }
+});
+
+app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
 });

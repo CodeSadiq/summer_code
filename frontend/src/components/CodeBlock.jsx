@@ -168,7 +168,7 @@ export default function CodeBlock({ visibleText, language, stepIndex, audioDurat
             <Play size={12} fill="currentColor" /> RUN CODE
           </button>
         </div>
-        <div className="flex-1 p-6 relative bg-white dark:bg-slate-900">
+        <div className="flex-1 p-6 relative bg-white dark:bg-slate-900 overflow-auto">
 
           {!hasRun ? (
             <div className="flex items-center justify-center h-full text-slate-400 dark:text-slate-600 text-[10px] font-bold uppercase tracking-[0.2em]">
@@ -182,14 +182,38 @@ export default function CodeBlock({ visibleText, language, stepIndex, audioDurat
                      <style>
                        body { 
                          margin: 0; 
-                         padding: 0; 
+                         padding: 20px; 
                          color: ${window.matchMedia('(prefers-color-scheme: dark)').matches ? '#f1f5f9' : '#0f172a'}; 
-                         font-family: system-ui, -apple-system, sans-serif;
+                         font-family: 'JetBrains Mono', 'Fira Code', monospace;
                          background: transparent;
+                         font-size: 14px;
+                         line-height: 1.5;
                        }
+                       #console-output { color: #10b981; white-space: pre-wrap; }
                      </style>
                    </head>
-                   <body>${output}</body>
+                   <body>
+                     <div id="root"></div>
+                     <div id="console-output"></div>
+                     <script>
+                       const consoleOutput = document.getElementById('console-output');
+                       const originalLog = console.log;
+                       console.log = (...args) => {
+                         const msg = args.map(arg => 
+                           typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
+                         ).join(' ');
+                         consoleOutput.innerText += msg + '\\n';
+                         originalLog(...args);
+                       };
+                       
+                       try {
+                         ${language === 'javascript' ? output : `document.getElementById('root').innerHTML = \`${output}\``}
+                       } catch (err) {
+                         consoleOutput.style.color = '#ef4444';
+                         consoleOutput.innerText += 'Error: ' + err.message;
+                       }
+                     </script>
+                   </body>
                  </html>
                `}
               title="preview"

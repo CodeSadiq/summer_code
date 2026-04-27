@@ -21,6 +21,7 @@ export default function AdminPage() {
   const [courses, setCourses] = useState([]);
   const [allTopics, setAllTopics] = useState([]);
   const [editingTopic, setEditingTopic] = useState(null);
+  const [credits, setCredits] = useState(null);
 
   const showToast = (msg, type = 'success') => {
     setToast({ msg, type });
@@ -53,6 +54,18 @@ export default function AdminPage() {
         } else {
           setAllTopics([]);
           setCourses([]);
+        }
+      })
+      .catch(console.error);
+
+    // Fetch Credits
+    fetch(`${API}/api/admin/elevenlabs-credits`)
+      .then(r => r.json())
+      .then(data => {
+        if (data.remaining !== undefined) {
+          setCredits(data);
+        } else if (data.error && data.error.includes('permissions')) {
+          setCredits({ error: 'No Permission' });
         }
       })
       .catch(console.error);
@@ -281,9 +294,17 @@ export default function AdminPage() {
         <main className="p-10 flex-1">
           {activeCourse === 'All' ? (
             <div className="flex flex-col gap-10 animate-entrance">
-              <div className="grid grid-cols-2 lg:grid-cols-2 gap-6">
+              <div className="grid grid-cols-2 lg:grid-cols-3 gap-6">
                 <StatCard label="Active Courses" value={stats.activeCourses} icon={<Layers size={20} />} color="violet" />
                 <StatCard label="Total Chapters" value={stats.totalChapters} icon={<BookOpen size={20} />} color="blue" />
+                {credits && (
+                  <StatCard 
+                    label="AI Credits (Chars)" 
+                    value={credits.error ? 'Permission Required' : `${credits.remaining?.toLocaleString() ?? '0'} / ${credits.total?.toLocaleString() ?? '0'}`} 
+                    icon={<Music size={20} />} 
+                    color={credits.error ? 'orange' : 'emerald'} 
+                  />
+                )}
               </div>
             </div>
           ) : (
