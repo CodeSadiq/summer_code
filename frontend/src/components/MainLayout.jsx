@@ -7,8 +7,7 @@ import clsx from 'clsx';
 import { Play, ChevronRight, Menu, ArrowRight, Ban } from 'lucide-react';
 
 export default function MainLayout({ children }) {
-  const { isActive, startTeaching, activeLesson, isSidebarOpen, setIsSidebarOpen, isEnglish, continueTeaching } = useTeachingState();
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = React.useState(false);
+  const { isActive, startTeaching, activeLesson, isSidebarOpen, setIsSidebarOpen, isEnglish, continueTeaching, isSidebarCollapsed, setIsSidebarCollapsed } = useTeachingState();
 
   // Swipe gesture state
   const [touchStart, setTouchStart] = React.useState(null);

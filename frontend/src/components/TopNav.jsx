@@ -120,19 +120,19 @@ export default function TopNav() {
             <button
               onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
               className={clsx(
-                "flex items-center gap-2 px-3 py-1.5 rounded-2xl border transition-all duration-300",
+                "flex items-center gap-3 pl-2 pr-4 py-1.5 rounded-full border transition-all duration-300",
                 isUserMenuOpen 
-                  ? "bg-slate-900 border-slate-900 text-white shadow-lg" 
-                  : "bg-white border-slate-200 text-slate-700 hover:border-slate-300 shadow-sm"
+                  ? "bg-slate-50 border-blue-200 shadow-md" 
+                  : "bg-white border-slate-200 hover:border-slate-300 hover:shadow-sm"
               )}
             >
-              <div className="w-6 h-6 rounded-full bg-blue-500/10 flex items-center justify-center">
-                <User size={14} className={isUserMenuOpen ? "text-blue-300" : "text-blue-600"} />
+              <div className="w-8 h-8 rounded-full bg-[#edf2f7] flex items-center justify-center">
+                <User size={16} className="text-[#2563eb]" />
               </div>
-              <span className="text-[10px] font-black uppercase tracking-wider hidden sm:inline">
-                {JSON.parse(localStorage.getItem('studentData'))?.name || 'Account'}
+              <span className="text-xs font-bold text-[#1e3a8a] tracking-wide hidden sm:inline uppercase">
+                {JSON.parse(localStorage.getItem('studentData'))?.name || 'ACCOUNT'}
               </span>
-              <ChevronDown size={14} className={clsx("transition-transform duration-300", isUserMenuOpen && "rotate-180")} />
+              <ChevronDown size={16} className={clsx("text-slate-600 transition-transform duration-300", isUserMenuOpen && "rotate-180")} />
             </button>
 
             {isUserMenuOpen && (

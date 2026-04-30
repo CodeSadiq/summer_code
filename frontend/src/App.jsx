@@ -8,13 +8,12 @@ import LessonPage from './pages/LessonPage';
 import AdminPage from './pages/AdminPage';
 import AdminLessonEditor from './pages/AdminLessonEditor';
 import LoginPage from './pages/LoginPage';
-import AdminLoginPage from './pages/AdminLoginPage';
 import ProfilePage from './pages/ProfilePage';
 
 // Simple Protected Route
 const ProtectedRoute = ({ children }) => {
   const token = localStorage.getItem('adminToken');
-  if (!token) return <Navigate to="/admin-login" replace />;
+  if (!token) return <Navigate to="/login" replace />;
   return children;
 };
 
@@ -28,7 +27,7 @@ function App() {
         <Routes>
           <Route path="/" element={<PublicLayout><LandingPage /></PublicLayout>} />
           <Route path="/login" element={<PublicLayout><LoginPage /></PublicLayout>} />
-          <Route path="/admin-login" element={<PublicLayout><AdminLoginPage /></PublicLayout>} />
+
           <Route path="/profile" element={<PublicLayout><ProfilePage /></PublicLayout>} />
           <Route path="/courses" element={<PublicLayout><AvailableCoursesPage /></PublicLayout>} />
 

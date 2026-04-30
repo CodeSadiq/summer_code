@@ -7,13 +7,20 @@ import 'prismjs/components/prism-css';
 import 'prismjs/components/prism-clike';
 import 'prismjs/components/prism-javascript';
 import 'prismjs/themes/prism-twilight.css'; // Good dark theme
-import { RotateCcw, Play } from 'lucide-react';
+import { RotateCcw, Play, Loader2 } from 'lucide-react';
 import { useTeachingState } from '../contexts/TeachingContext';
+import { API_URL } from '../config';
 
-export default function CodeBlock({ visibleText, language, stepIndex, audioDuration }) {
+export default function CodeBlock({ visibleText, language, stepIndex, audioDuration, defaultStdin }) {
   const [code, setCode] = useState(visibleText || '');
   const [output, setOutput] = useState(visibleText || '');
   const [hasRun, setHasRun] = useState(true);
+  const [isRunning, setIsRunning] = useState(false);
+  const [execResult, setExecResult] = useState('');
+  const [execError, setExecError] = useState(false);
+  const [stdin, setStdin] = useState(defaultStdin || '');
+
+  const isBrowserLang = ['html', 'css', 'javascript', 'js'].includes((language || '').toLowerCase());
 
   const {
     isActive, mode, currentStep, showContinueButton, setShowContinueButton,
@@ -24,7 +31,8 @@ export default function CodeBlock({ visibleText, language, stepIndex, audioDurat
   useEffect(() => {
     setCode(visibleText || '');
     setOutput(visibleText || '');
-  }, [visibleText]);
+    setStdin(defaultStdin || '');
+  }, [visibleText, defaultStdin]);
 
   const isCurrentBlock = isActive && currentStep === stepIndex;
   const isReadOnly = (isCurrentBlock && (mode === 'BOT_CODING' || mode === 'EXPLAINING' || mode === 'EXPLAINING_CODE')) || (!isCurrentBlock && isActive);
@@ -32,7 +40,12 @@ export default function CodeBlock({ visibleText, language, stepIndex, audioDurat
   // Initialize output
   useEffect(() => {
     setOutput(visibleText);
-  }, [visibleText]);
+    setStdin(defaultStdin || '');
+    if (!isBrowserLang) {
+      setExecResult('');
+      setExecError(false);
+    }
+  }, [visibleText, defaultStdin, isBrowserLang]);
 
   const typingState = useRef({ index: 0, text: '' });
 
@@ -97,14 +110,37 @@ export default function CodeBlock({ visibleText, language, stepIndex, audioDurat
     }
   }, [isCurrentBlock, mode, isPaused, setShowContinueButton]);
 
-  const handleRun = () => {
-    setOutput(code);
+  const handleRun = async () => {
     setHasRun(true);
     if (isCurrentBlock && mode === 'AT_CODE_BLOCK') {
       setMode('USER_TRYING');
       setUserHasRun(true);
     } else if (isCurrentBlock && mode === 'USER_TRYING') {
       setUserHasRun(true);
+    }
+
+    if (isBrowserLang) {
+      setOutput(code);
+      setExecResult('');
+    } else {
+      setIsRunning(true);
+      setExecResult('Executing code on remote server...');
+      setExecError(false);
+      try {
+        const res = await fetch(`${API_URL}/api/execute`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ code, language, stdin })
+        });
+        const data = await res.json();
+        setExecResult(data.output || 'No output generated.');
+        setExecError(data.error || !res.ok);
+      } catch (err) {
+        setExecResult('Execution failed. Please try again.');
+        setExecError(true);
+      } finally {
+        setIsRunning(false);
+      }
     }
   };
 
@@ -152,18 +188,35 @@ export default function CodeBlock({ visibleText, language, stepIndex, audioDurat
             placeholder: `Write some ${language} code...`
           })}
         </div>
+        {!isBrowserLang && (
+          <div className="bg-[#0b1121] border-t border-slate-800 p-4 shrink-0">
+             <div className="flex items-center justify-between mb-2">
+               <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Standard Input (stdin)</label>
+               {defaultStdin && (
+                 <span className="text-[9px] font-black uppercase tracking-widest bg-amber-500/10 text-amber-500 px-2 py-0.5 rounded border border-amber-500/20">Input Required</span>
+               )}
+             </div>
+             <textarea 
+               value={stdin}
+               onChange={e => setStdin(e.target.value)}
+               placeholder="Enter inputs here (separated by newlines)..."
+               readOnly={isReadOnly}
+               className="w-full bg-[#1e293b] border border-slate-700/50 rounded-lg p-3 text-xs text-slate-300 font-mono outline-none focus:border-blue-500/50 resize-y min-h-[60px]"
+             />
+          </div>
+        )}
       </div>
 
       {/* Preview Side */}
       <div className="bg-white dark:bg-[#1e293b] flex flex-col min-w-0 transition-colors duration-500">
         <div className="h-12 border-b border-slate-100 dark:border-white/5 flex items-center justify-between px-4 bg-white dark:bg-[#1e293b]">
           <div className="flex items-center gap-2 text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">
-            <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+            <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></span>
             Preview
           </div>
           <button
             onClick={handleRun}
-            className="flex items-center gap-2 bg-blue-600 text-white hover:bg-blue-700 px-4 py-1.5 rounded-full text-[10px] font-black transition-colors disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-wider"
+            className="flex items-center gap-2 bg-slate-900 dark:bg-emerald-600 text-white hover:bg-black dark:hover:bg-emerald-500 px-5 py-2 rounded-full text-[10px] font-black transition-all hover:shadow-lg hover:shadow-emerald-500/10 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-widest"
           >
             <Play size={12} fill="currentColor" /> RUN CODE
           </button>
@@ -174,7 +227,7 @@ export default function CodeBlock({ visibleText, language, stepIndex, audioDurat
             <div className="flex items-center justify-center h-full text-slate-400 dark:text-slate-600 text-[10px] font-bold uppercase tracking-[0.2em]">
               Waiting for execution...
             </div>
-          ) : (
+          ) : isBrowserLang ? (
             <iframe
               srcDoc={`
                  <html>
@@ -220,6 +273,18 @@ export default function CodeBlock({ visibleText, language, stepIndex, audioDurat
               sandbox="allow-scripts allow-modals"
               className="w-full h-full border-0"
             />
+          ) : (
+            <div className="w-full h-full bg-[#0f172a] text-slate-300 font-mono text-sm p-6 rounded-xl overflow-auto whitespace-pre-wrap">
+              {isRunning ? (
+                 <div className="flex items-center gap-3 text-emerald-400 animate-pulse">
+                    <Loader2 className="animate-spin" size={18} /> Executing remotely...
+                 </div>
+              ) : (
+                 <div className={execError ? "text-red-400" : "text-emerald-400"}>
+                   {execResult || 'Ready to run.'}
+                 </div>
+              )}
+            </div>
           )}
         </div>
       </div>

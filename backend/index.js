@@ -113,11 +113,17 @@ app.post('/api/auth/login', async (req, res) => {
     const user = await User.findOne({ email, password });
     if (!user) return res.status(401).json({ success: false, error: 'Invalid email or password' });
 
-    res.json({
+    const isAdmin = user.email === (process.env.ADMIN_EMAIL || 'sadiq.imam404@gmail.com');
+    const responsePayload = {
       success: true,
       token: 'student-token-' + user._id,
-      user: { name: user.name, email: user.email, completedLessons: user.completedLessons }
-    });
+      user: { name: user.name, email: user.email, completedLessons: user.completedLessons, role: isAdmin ? 'admin' : 'student' }
+    };
+    if (isAdmin) {
+      responsePayload.adminToken = 'admin-token-' + user._id;
+    }
+    
+    res.json(responsePayload);
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
@@ -147,11 +153,17 @@ app.post('/api/auth/google', async (req, res) => {
       await user.save();
     }
 
-    res.json({
+    const isAdmin = user.email === (process.env.ADMIN_EMAIL || 'sadiq.imam404@gmail.com');
+    const responsePayload = {
       success: true,
       token: 'student-token-' + user._id,
-      user: { name: user.name, email: user.email, completedLessons: user.completedLessons, picture }
-    });
+      user: { name: user.name, email: user.email, completedLessons: user.completedLessons, picture, role: isAdmin ? 'admin' : 'student' }
+    };
+    if (isAdmin) {
+      responsePayload.adminToken = 'admin-token-' + user._id;
+    }
+
+    res.json(responsePayload);
   } catch (err) {
     console.error('Google Auth Error:', err);
     res.status(500).json({ success: false, error: 'Google authentication failed' });
@@ -451,6 +463,52 @@ app.get('/api/admin/migrate-data', async (req, res) => {
     res.json({ success: true, message: 'Migration triggered' });
   } catch (err) {
     res.status(500).json({ error: 'Migration failed' });
+  }
+});
+
+// 11. Code Execution via Judge0
+app.post('/api/execute', async (req, res) => {
+  const { code, language, stdin } = req.body;
+  
+  const langMap = {
+    'python': 71,
+    'c': 50,
+    'c++': 54,
+    'cpp': 54,
+    'javascript': 63,
+    'java': 62
+  };
+  
+  const language_id = langMap[(language || '').toLowerCase()];
+  
+  if (!language_id) {
+    return res.status(400).json({ error: `Unsupported language for execution: ${language}` });
+  }
+
+  try {
+    const judge0Url = process.env.JUDGE0_URL || 'https://ce.judge0.com';
+    const response = await fetch(`${judge0Url}/submissions?base64_encoded=false&wait=true`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ source_code: code, language_id, stdin })
+    });
+    
+    if (!response.ok) {
+        throw new Error(`Judge0 API error: ${response.status} ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    
+    if (data.compile_output) {
+      res.json({ output: data.compile_output, error: true });
+    } else if (data.stderr) {
+      res.json({ output: data.stderr, error: true });
+    } else {
+      res.json({ output: data.stdout || '', error: false });
+    }
+  } catch (err) {
+    console.error('Code execution error:', err);
+    res.status(500).json({ error: 'Code execution failed: ' + err.message });
   }
 });
 

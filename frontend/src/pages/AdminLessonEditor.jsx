@@ -18,7 +18,7 @@ const BLOCK_TYPES = [
 ];
 
 const DEFAULT_COURSES = [];
-const LANG_OPTIONS = ['html', 'css', 'javascript', 'python', 'jsx', 'typescript'];
+const LANG_OPTIONS = ['html', 'css', 'javascript', 'python', 'c', 'c++', 'java', 'jsx', 'typescript'];
 
 function makeBlock(type) {
   return {
@@ -116,6 +116,18 @@ function BlockEditor({ block, idx, total, onChange, onDelete, onMove }) {
                   rows={8}
                   className="w-full bg-[#0f172a] border border-white/10 rounded-3xl px-6 py-5 text-sm text-emerald-400 font-mono outline-none focus:ring-4 focus:ring-emerald-500/10 resize-none shadow-2xl"
                 />
+                {!['html', 'css', 'javascript', 'jsx', 'typescript'].includes(block.language || 'html') && (
+                  <div className="pt-4 border-t border-slate-200/50">
+                    <Label>Optional: Pre-fill Standard Input (stdin)</Label>
+                    <textarea
+                      value={block.defaultStdin || ''}
+                      onChange={e => set('defaultStdin', e.target.value)}
+                      rows={2}
+                      placeholder="Enter inputs here (separated by newlines)..."
+                      className="w-full bg-white border border-slate-200 rounded-2xl px-6 py-4 text-sm text-slate-700 font-mono outline-none focus:ring-4 focus:ring-blue-500/10 resize-none shadow-sm mt-2"
+                    />
+                  </div>
+                )}
               </div>
             ) : (
               <textarea

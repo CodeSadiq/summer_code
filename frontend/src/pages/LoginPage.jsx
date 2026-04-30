@@ -26,6 +26,9 @@ export default function LoginPage() {
       if (data.success) {
         localStorage.setItem('studentToken', data.token);
         localStorage.setItem('studentData', JSON.stringify(data.user));
+        if (data.adminToken) {
+          localStorage.setItem('adminToken', data.adminToken);
+        }
         navigate('/');
       } else {
         setError(data.error || 'Google Login Failed');
@@ -78,6 +81,9 @@ export default function LoginPage() {
         if (mode === 'login') {
           localStorage.setItem('studentToken', data.token);
           localStorage.setItem('studentData', JSON.stringify(data.user));
+          if (data.adminToken) {
+            localStorage.setItem('adminToken', data.adminToken);
+          }
           navigate('/');
         } else if (mode === 'signup') {
           setSuccess('Account created! Please login now.');
@@ -234,7 +240,6 @@ export default function LoginPage() {
                   <GoogleLogin
                     onSuccess={handleGoogleSuccess}
                     onError={() => setError('Google Login Initialization Failed')}
-                    useOneTap
                     theme="filled_blue"
                     shape="pill"
                     text="continue_with"

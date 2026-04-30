@@ -28,7 +28,7 @@ export default function LessonPage() {
     isActive, currentStep, isAdminMode,
     setIsSpeaking, mode, isPaused,
     setActiveLesson, continueTeaching, activeLesson, jumpToStep,
-    isEnglish, setIsEnglish
+    isEnglish, setIsEnglish, isSidebarCollapsed
   } = useTeachingState();
 
   const audioRef = useRef(null);
@@ -216,7 +216,10 @@ export default function LessonPage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-8 pt-12 md:p-12 md:pt-16 lg:p-16 lg:pt-20 relative font-sans animate-entrance w-full">
+    <div className={clsx(
+      "mx-auto p-8 pt-12 md:p-12 md:pt-16 lg:p-16 lg:pt-20 relative font-sans animate-entrance w-full transition-all duration-500",
+      isSidebarCollapsed ? "max-w-6xl" : "max-w-4xl"
+    )}>
       <div className="flex-1 relative z-10 w-full">
         {isAdminMode && (
           <div className="fixed top-0 left-0 right-0 bg-red-600/90 text-white font-black text-center py-2 text-[10px] tracking-[0.4em] z-[100] shadow-2xl uppercase">
@@ -293,6 +296,7 @@ export default function LessonPage() {
                       language={block.language || 'html'}
                       stepIndex={actualStep}
                       audioDuration={isEnglish ? block.englishTeachingScript?.duration : block.teachingScript?.duration}
+                      defaultStdin={block.defaultStdin}
                     />
                   </TeachingHighlighter>
                 </div>
@@ -307,7 +311,8 @@ export default function LessonPage() {
               >
                 <TeachingHighlighter stepIndex={actualStep} hasCodeBlock={false}>
                   <p className={clsx(
-                    "text-xl leading-relaxed transition-all duration-300 w-full md:max-w-2xl",
+                    "text-xl leading-relaxed transition-all duration-500 w-full",
+                    isSidebarCollapsed ? "md:max-w-4xl" : "md:max-w-2xl",
                     isCurrentBlock
                       ? "text-slate-900 dark:text-white font-bold"
                       : "text-slate-700 dark:text-slate-300 font-medium"

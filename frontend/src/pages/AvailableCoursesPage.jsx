@@ -34,14 +34,14 @@ export default function AvailableCoursesPage() {
   };
 
   return (
-    <div className="min-h-screen bg-white flex flex-col font-sans">
+    <div className="min-h-screen bg-[#f4ecea] flex flex-col font-sans">
 
       {/* Hero Header */}
-      <header className="pt-32 pb-20 px-6 text-center max-w-7xl mx-auto w-full">
-        <h1 className="text-5xl md:text-7xl font-black text-slate-900 tracking-tighter mb-6">
-          Explore Our <span className="text-blue-600">Courses</span>
+      <header className="pt-32 pb-20 px-6 text-left max-w-7xl mx-auto w-full">
+        <h1 className="text-4xl md:text-5xl font-bold text-slate-900 mb-4">
+          Explore Our Courses
         </h1>
-        <p className="text-lg md:text-xl text-slate-500 max-w-2xl mx-auto font-medium leading-relaxed">
+        <p className="text-lg text-slate-500 max-w-2xl font-medium">
           Coding ab Hinglish mein! Hamare expert-led courses ke saath apni programming journey aaj hi shuru karein.
         </p>
       </header>
@@ -107,15 +107,33 @@ export default function AvailableCoursesPage() {
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="py-12 border-t border-slate-200/60 px-6">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
-          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-            &copy; 2026 SummerCode Platform. <span className="text-blue-500/50 ml-2">Built with Excellence.</span>
-          </p>
-          <Link to="/" className="text-[10px] font-black text-slate-400 hover:text-slate-900 uppercase tracking-[0.3em] transition-colors">
-            Back to Home
-          </Link>
+      {/* Simple Compact Footer */}
+      <footer className="bg-[#282a36] text-white py-12 px-6 relative z-10 border-t border-white/5">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
+          <div className="flex flex-col md:items-start items-center gap-4">
+            <Link to="/" className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
+                <Code2 className="text-white" size={24} />
+              </div>
+              <span className="text-lg font-black tracking-widest uppercase font-outfit">SUMMERCODE</span>
+            </Link>
+            <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest">
+              &copy; 2026 SummerCode. Built in India.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap justify-center gap-8 md:gap-12">
+            {[
+              { label: "Courses", href: "/courses" },
+              { label: "Admin", href: "/admin" },
+              { label: "Privacy", href: "#" },
+              { label: "Terms", href: "#" }
+            ].map(item => (
+              <Link key={item.label} to={item.href} className="text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-white transition-colors">
+                {item.label}
+              </Link>
+            ))}
+          </div>
         </div>
       </footer>
     </div>

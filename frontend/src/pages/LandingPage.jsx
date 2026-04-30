@@ -36,18 +36,18 @@ export default function LandingPage() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#fafaf9] relative overflow-hidden font-sans selection:bg-blue-100 selection:text-blue-900">
+    <div className="flex flex-col min-h-screen bg-[#d9ede1] relative overflow-hidden font-sans selection:bg-blue-100 selection:text-blue-900">
 
       {/* Enhanced Viewport Background - Grid, Blobs and Code Symbols */}
       <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
         <div className="absolute inset-0 bg-grid-slate opacity-[0.2]" />
-        <div className="absolute top-[-20%] left-[-10%] w-[70%] h-[70%] bg-blue-400/10 blur-[120px] rounded-full" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[60%] h-[60%] bg-indigo-400/10 blur-[140px] rounded-full" />
+        <div className="absolute top-[-20%] left-[-10%] w-[70%] h-[70%] bg-white/40 blur-[120px] rounded-full" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[60%] h-[60%] bg-emerald-200/40 blur-[140px] rounded-full" />
 
         {/* Static Code Symbols - Subtle visibility */}
-        <div className="absolute top-[12vh] left-[5vw] text-8xl font-black font-mono text-indigo-600/[0.08] select-none">{"{ }"}</div>
-        <div className="absolute top-[22vh] right-[4vw] text-9xl font-black font-mono text-indigo-600/[0.08] select-none">{"<div>"}</div>
-        <div className="absolute top-[75vh] left-[8vw] text-7xl font-black font-mono text-indigo-600/[0.08] select-none">{"[ ]"}</div>
+        <div className="absolute top-[12vh] left-[5vw] text-8xl font-black font-mono text-[#282a36]/[0.08] select-none">{"{ }"}</div>
+        <div className="absolute top-[35vh] -right-[2vw] text-9xl font-black font-mono text-[#282a36]/[0.08] select-none">{"<div>"}</div>
+        <div className="absolute top-[75vh] left-[8vw] text-7xl font-black font-mono text-[#282a36]/[0.08] select-none">{"[ ]"}</div>
       </div>
 
       {/* 1. Hero Viewport Wrapper */}
@@ -56,9 +56,9 @@ export default function LandingPage() {
         {/* Static Hero Content Container */}
         <main className="relative z-20 pt-32 pb-32 px-6 flex flex-col items-center text-center max-w-[1600px] mx-auto">
 
-          <h1 className="text-6xl md:text-8xl lg:text-[110px] font-outfit font-extrabold text-slate-900 tracking-tight leading-[1.1] mb-12 max-w-[1400px] mt-10">
+          <h1 className="text-6xl md:text-8xl lg:text-[110px] font-outfit font-extrabold text-[#282a36] tracking-tight leading-[1.1] mb-12 max-w-[1400px] mt-10">
             Coding Seekho <br className="hidden sm:block" />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-600">
+            <span className="text-emerald-700">
               Hinglish Mein.
             </span>
           </h1>
@@ -66,28 +66,39 @@ export default function LandingPage() {
 
 
 
-          <p className="text-lg md:text-xl text-slate-500 max-w-2xl mb-16 font-medium leading-relaxed">
-            Ab language ki tension chhodo. Pure logic samjhein apni bhasha mein <br className="hidden md:block" />
-            aur banayein real-world projects, pehli line se.
+          <p className="text-lg md:text-xl text-[#282a36]/80 max-w-2xl mb-16 font-medium leading-relaxed">
+            An Integrated Guided Learning platform for programming concepts.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center gap-6">
-            <Link to={`/lessons/${lessons[0]?.slug || 'html-introduction'}`} className="group bg-slate-900 text-white px-10 py-5 rounded-2xl font-bold transition-all hover:scale-105 active:scale-95 shadow-2xl flex items-center gap-3">
+            <Link to={`/lessons/${lessons[0]?.slug || 'html-introduction'}`} className="group bg-[#282a36] text-white px-10 py-5 rounded-2xl font-bold transition-all hover:scale-105 active:scale-95 shadow-2xl flex items-center gap-3">
               SHURU KAREIN — IT'S FREE
               <ArrowRight className="group-hover:translate-x-1 transition-transform" />
             </Link>
-            <Link to="/courses" className="bg-white text-slate-900 border border-slate-200 px-10 py-5 rounded-2xl font-bold transition-all hover:bg-slate-50 active:scale-95">
+            <Link to="/courses" className="bg-white text-[#282a36] border border-slate-200 px-10 py-5 rounded-2xl font-bold transition-all hover:bg-slate-50 active:scale-95">
               SYLLABUS DEKHEIN
             </Link>
           </div>
         </main>
       </section>
 
-      {/* Straight Divider */}
-      <div className="h-px w-full bg-slate-200" />
+      {/* Curve Divider */}
+      <div className="w-full overflow-hidden leading-[0] m-0 p-0 relative z-10 bg-transparent -mb-[1px]">
+        <svg
+          className="block w-full h-[60px] md:h-[120px]"
+          viewBox="0 0 1440 100"
+          preserveAspectRatio="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            fill="#282a36"
+            d="M0,45 C320,25 420,75 720,65 C1020,55 1200,25 1440,25 L1440,100 L0,100 Z"
+          ></path>
+        </svg>
+      </div>
 
       {/* 2. Feature Strip - Compact High-Contrast Section */}
-      <section className="relative z-10 bg-slate-900 py-16 overflow-hidden border-y border-white/5">
+      <section className="relative z-10 bg-[#282a36] py-16 overflow-hidden border-b border-white/5">
         <div className="max-w-7xl mx-auto px-6">
           <div className="grid lg:grid-cols-4 gap-12 items-center">
             <div className="lg:col-span-1">
@@ -119,26 +130,19 @@ export default function LandingPage() {
       </section>
 
       {/* 4. Catalog - High Visibility Grid */}
-      <section className="relative z-10 bg-white py-32 border-t border-slate-100">
+      <section className="relative z-10 bg-[#f4ecea] py-32 border-t border-[#e8dfdc]">
         <div className="max-w-7xl mx-auto px-6">
           <div className="flex flex-col md:flex-row md:items-end justify-between mb-24 gap-8">
             <div className="text-left">
-              <h2 className="text-5xl md:text-6xl font-black text-slate-900 tracking-tighter mb-6">Available Courses</h2>
-              <p className="text-lg text-slate-500 max-w-2xl font-medium">
+              <h2 className="text-5xl md:text-6xl font-black text-[#282a36] tracking-tighter mb-6">Available Courses</h2>
+              <p className="text-lg text-[#282a36]/80 max-w-2xl font-medium">
                 Join thousands of students learning to build for the future in their own language.
               </p>
             </div>
-            <Link
-              to="/courses"
-              className="group flex items-center gap-3 bg-slate-900 text-white px-8 py-4 rounded-2xl font-bold transition-all hover:bg-blue-600 active:scale-95 shadow-lg shrink-0"
-            >
-              VIEW ALL COURSES
-              <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
-            </Link>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-            {topics.map((course) => {
+            {topics.slice(0, 5).map((course) => {
               const slug = getFirstLessonSlug(course.name);
               const isActive = course.status === 'Active' && slug;
               const description = course.name === 'HTML'
@@ -152,21 +156,21 @@ export default function LandingPage() {
                     onClick={(e) => !isActive && e.preventDefault()}
                     className={clsx(
                       "group relative h-full flex flex-col bg-slate-50 rounded-[3rem] p-12 border border-slate-200/50 transition-all duration-500 overflow-hidden",
-                      isActive ? "hover:border-slate-900/20 hover:shadow-[0_30px_60px_-15px_rgba(15,23,42,0.1)]" : "cursor-not-allowed"
+                      isActive ? "hover:border-[#282a36]/20 hover:shadow-[0_30px_60px_-15px_rgba(15,23,42,0.1)]" : "cursor-not-allowed"
                     )}
                   >
                     {/* Decorative background element */}
-                    <div className="absolute -right-8 -top-8 w-40 h-40 bg-slate-900/[0.03] rounded-full blur-3xl group-hover:bg-slate-900/[0.05] transition-all duration-500" />
+                    <div className="absolute -right-8 -top-8 w-40 h-40 bg-[#282a36]/[0.03] rounded-full blur-3xl group-hover:bg-[#282a36]/[0.05] transition-all duration-500" />
 
                     <div className="relative z-10 flex flex-col h-full">
                       <div className="flex items-start justify-between mb-10">
                         <div className={clsx(
                           "w-16 h-16 rounded-2xl flex items-center justify-center shadow-sm border border-slate-100 transition-all duration-300",
-                          isActive ? "bg-white group-hover:bg-slate-900 group-hover:text-white group-hover:scale-110" : "bg-slate-100 text-slate-400"
+                          isActive ? "bg-white group-hover:bg-[#282a36] group-hover:text-white group-hover:scale-110" : "bg-slate-100 text-slate-400"
                         )}>
                           <Layers size={28} />
                         </div>
-                        
+
                         {isActive ? (
                           <span className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-600 rounded-full text-[10px] font-black uppercase tracking-widest border border-emerald-100">
                             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
@@ -182,7 +186,7 @@ export default function LandingPage() {
                       <div className="flex-grow">
                         <h3 className={clsx(
                           "text-3xl font-black mb-6 transition-colors",
-                          isActive ? "text-slate-800 group-hover:text-slate-900" : "text-slate-400"
+                          isActive ? "text-slate-800 group-hover:text-[#282a36]" : "text-slate-400"
                         )}>
                           {course.name}
                         </h3>
@@ -196,12 +200,12 @@ export default function LandingPage() {
 
                       <div className={clsx(
                         "flex items-center gap-3 text-sm font-black uppercase tracking-widest transition-colors",
-                        isActive ? "text-slate-600 group-hover:text-slate-900" : "text-slate-300"
+                        isActive ? "text-slate-600 group-hover:text-[#282a36]" : "text-slate-300"
                       )}>
                         {isActive ? 'Seekhna Shuru Karein' : 'Pehle Se Taiyar Rahein'}
                         <div className={clsx(
                           "w-8 h-8 rounded-full flex items-center justify-center transition-transform",
-                          isActive ? "bg-slate-900 text-white group-hover:translate-x-2" : "bg-slate-200 text-slate-400"
+                          isActive ? "bg-[#282a36] text-white group-hover:translate-x-2" : "bg-slate-200 text-slate-400"
                         )}>
                           <ArrowRight size={16} />
                         </div>
@@ -211,12 +215,33 @@ export default function LandingPage() {
                 </div>
               );
             })}
+
+            {/* View All Courses Card */}
+            <div className="h-full">
+              <Link
+                to="/courses"
+                className="group relative h-full flex flex-col items-center justify-center bg-[#282a36] rounded-[3rem] p-12 border border-[#282a36] transition-all duration-500 overflow-hidden hover:shadow-[0_30px_60px_-15px_rgba(40,42,54,0.3)] hover:-translate-y-1"
+              >
+                <div className="absolute inset-0 bg-gradient-to-br from-[#282a36] to-[#1a1b23] z-0" />
+                <div className="absolute -right-8 -bottom-8 w-40 h-40 bg-white/[0.05] rounded-full blur-3xl group-hover:bg-white/[0.1] transition-all duration-500 z-0" />
+
+                <div className="relative z-10 flex flex-col items-center justify-center text-center h-full">
+                  <div className="w-20 h-20 rounded-[2rem] bg-white/10 flex items-center justify-center text-white mb-8 group-hover:scale-110 group-hover:bg-emerald-500 transition-all duration-500">
+                    <ArrowRight size={32} />
+                  </div>
+                  <h3 className="text-3xl font-black text-white mb-4">View All Courses</h3>
+                  <p className="font-medium text-slate-400">
+                    Explore our complete catalog of interactive programming courses.
+                  </p>
+                </div>
+              </Link>
+            </div>
           </div>
         </div>
       </section>
 
       {/* Simple Compact Footer */}
-      <footer className="bg-[#020617] text-white py-12 px-6 relative z-10 border-t border-white/5">
+      <footer className="bg-[#282a36] text-white py-12 px-6 relative z-10 border-t border-white/5">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
           <div className="flex flex-col md:items-start items-center gap-4">
             <Link to="/" className="flex items-center gap-3">

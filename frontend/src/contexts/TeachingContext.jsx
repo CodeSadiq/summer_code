@@ -18,6 +18,7 @@ export function TeachingProvider({ children }) {
   const [activeLesson, setActiveLesson] = useState(null);
   const [isEnglish, setIsEnglish] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
   const location = useLocation();
 
@@ -142,6 +143,7 @@ export function TeachingProvider({ children }) {
     isAdminMode, setIsAdminMode,
     activeLesson, setActiveLesson,
     isSidebarOpen, setIsSidebarOpen,
+    isSidebarCollapsed, setIsSidebarCollapsed,
     isEnglish, setIsEnglish,
     startTeaching, stopTeaching, togglePause, continueTeaching, explainTopic, explainLastTopic,
     startCodeExplanation, jumpToStep
