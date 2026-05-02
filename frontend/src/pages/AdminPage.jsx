@@ -296,13 +296,13 @@ export default function AdminPage() {
             <div className="flex flex-col gap-10 animate-entrance">
               <div className="grid grid-cols-2 lg:grid-cols-3 gap-6">
                 <StatCard label="Active Courses" value={stats.activeCourses} icon={<Layers size={20} />} color="violet" />
-                <StatCard label="Total Chapters" value={stats.totalChapters} icon={<BookOpen size={20} />} color="blue" />
                 {credits && (
                   <StatCard 
-                    label="AI Credits (Chars)" 
+                    label="11 Lab Audio Generation Credit" 
                     value={credits.error ? 'Permission Required' : `${credits.remaining?.toLocaleString() ?? '0'} / ${credits.total?.toLocaleString() ?? '0'}`} 
                     icon={<Music size={20} />} 
                     color={credits.error ? 'orange' : 'emerald'} 
+                    subtext={credits.resetDate ? `Renews on: ${new Date(credits.resetDate * 1000).toLocaleDateString()}` : null}
                   />
                 )}
               </div>
@@ -456,7 +456,7 @@ function TopicSettingsModal({ topic, onClose, onSave }) {
   );
 }
 
-function StatCard({ label, value, icon, color }) {
+function StatCard({ label, value, icon, color, subtext }) {
   const colors = {
     blue: 'bg-blue-50 text-blue-600 border-blue-100',
     emerald: 'bg-emerald-50 text-emerald-600 border-emerald-100',
@@ -471,6 +471,11 @@ function StatCard({ label, value, icon, color }) {
       <div>
         <p className="text-3xl font-black text-slate-900 leading-tight tracking-tighter">{value}</p>
         <p className="text-[10px] font-black text-slate-400 mt-1 uppercase tracking-widest">{label}</p>
+        {subtext && (
+          <p className="text-[10px] font-bold text-blue-500 mt-2 bg-blue-50/50 px-3 py-1 rounded-full inline-block">
+            {subtext}
+          </p>
+        )}
       </div>
     </div>
   );

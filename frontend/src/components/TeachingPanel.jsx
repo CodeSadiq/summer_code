@@ -93,13 +93,13 @@ export default function TeachingPanel() {
         </div>
 
         {/* Controls - perfectly centered for mobile */}
-        <div className="px-5 pb-5 pt-3 md:pt-5 border-t border-slate-100 bg-slate-50/50 flex flex-col md:flex-col items-center justify-center gap-3">
+        <div className="px-5 pb-5 pt-3 md:pt-5 border-t border-slate-100 bg-slate-50/50 flex flex-col md:flex-col items-center justify-center gap-2">
 
           {/* Wait state */}
           {mode === 'AT_CODE_BLOCK' && !showContinueButton && (
-            <div className="w-full py-2 bg-blue-600 text-white md:bg-slate-50 md:text-slate-500 font-semibold rounded-xl flex justify-center items-center gap-2 text-[10px] tracking-widest uppercase">
-              <span className="w-2 h-2 rounded-full bg-white md:bg-blue-500 animate-pulse" />
-              Your turn to try
+            <div className="w-full py-1.5 bg-emerald-500 text-white font-black rounded-xl flex justify-center items-center gap-2 text-[10px] tracking-[0.2em] uppercase animate-pop-in shadow-lg shadow-emerald-500/20">
+              <Sparkles size={14} className="animate-pulse" />
+              Ab aap karo!
             </div>
           )}
 
@@ -111,7 +111,8 @@ export default function TeachingPanel() {
                 onClick={continueTeaching}
                 className="flex-1 rounded-xl bg-slate-900 text-white text-[10px] font-bold tracking-widest uppercase flex items-center justify-center gap-2"
               >
-                Go Ahead <ChevronRight size={14} />
+                <Sparkles size={14} className="animate-pulse" />
+                Ab aap karo!
               </button>
             ) : (mode === 'AT_CODE_BLOCK' && showContinueButton) ? (
               <div className="flex gap-2 flex-1">

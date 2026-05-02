@@ -224,6 +224,77 @@ function BlockEditor({ block, idx, total, onChange, onDelete, onMove }) {
               className="w-full bg-white border border-slate-200 rounded-3xl px-6 py-5 text-base text-slate-800 font-semibold outline-none focus:ring-4 focus:ring-emerald-500/5 resize-none shadow-sm transition-all focus:border-emerald-400"
             />
           </div>
+
+          {/* 4. English AI Narration */}
+          <div className="bg-white border border-slate-200 rounded-[2.5rem] p-8 shadow-sm flex flex-col gap-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-2 h-2 rounded-full bg-amber-500 shadow-sm shadow-amber-200" />
+                <Label>4. Narration Script (English AI)</Label>
+              </div>
+              <button
+                type="button"
+                onClick={async (e) => {
+                  const currentBtn = e.currentTarget;
+                  if (!block?.englishTeachingScript?.transcript) {
+                    alert('Please write a transcript first!');
+                    return;
+                  }
+                  try {
+                    currentBtn.disabled = true;
+                    currentBtn.innerText = 'GENERATING...';
+                    
+                    const res = await fetch(`${API}/api/admin/generate-audio`, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ text: block.englishTeachingScript.transcript })
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                      set('englishTeachingScript', { 
+                        ...block.englishTeachingScript, 
+                        audioUrl: data.audioUrl,
+                        fileName: data.filename 
+                      });
+                      if (data.credits) alert(`Success! Credits left: ${data.credits.remaining}`);
+                    } else {
+                      alert(data.error || 'Failed');
+                    }
+                  } catch (err) {
+                    alert('Server Error');
+                  } finally {
+                    if (currentBtn) {
+                      currentBtn.disabled = false;
+                      currentBtn.innerText = 'AI GENERATE';
+                    }
+                  }
+                }}
+                className="shrink-0 flex items-center gap-2 text-[10px] font-black bg-slate-900 text-white px-5 py-2.5 rounded-xl hover:bg-emerald-600 transition-all uppercase tracking-widest shadow-lg shadow-slate-200 active:scale-95 disabled:opacity-50"
+              >
+                <Sparkles size={14} className="text-emerald-400" /> AI GENERATE
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <textarea
+                value={block.englishTeachingScript?.transcript || ''}
+                onChange={e => {
+                  const newScript = { ...block.englishTeachingScript, transcript: e.target.value };
+                  set('englishTeachingScript', newScript);
+                }}
+                placeholder="Write what the English AI should speak..."
+                rows={4}
+                className="w-full bg-slate-50 border border-slate-200 rounded-3xl px-6 py-5 text-sm font-bold text-slate-700 outline-none focus:ring-4 focus:ring-amber-500/5 resize-none italic"
+              />
+              <div className="flex flex-col justify-center">
+                <AudioUploader
+                  label="Generated/Uploaded English Audio"
+                  script={block.englishTeachingScript}
+                  onScriptChange={(newScript) => set('englishTeachingScript', newScript)}
+                />
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>
@@ -276,12 +347,29 @@ export default function AdminLessonEditor() {
           if (!isNew) {
             const l = data.find(l => l.slug === slug);
             if (l) setLesson(l);
+          } else {
+            // Reset for new lesson
+            const course = location.state?.topic || 'HTML';
+            const courseLessons = data.filter(l => l.course === course);
+            const nextOrder = courseLessons.length > 0 
+              ? Math.max(...courseLessons.map(l => l.chapterOrder || 0)) + 1 
+              : 1;
+              
+            setLesson({
+              id: '',
+              slug: '',
+              title: '',
+              course: course,
+              description: '',
+              chapterOrder: nextOrder,
+              blocks: [],
+            });
           }
         }
         setLoading(false);
       })
       .catch(() => { showToast('Failed to load lessons', 'error'); setLoading(false); });
-  }, [slug, isNew]);
+  }, [slug, isNew, location.state]);
 
   const setField = (key, val) => setLesson(l => ({ ...l, [key]: val }));
 
@@ -424,15 +512,47 @@ export default function AdminLessonEditor() {
               </div>
             </Field>
 
-            <Field label="Chapter Index">
-              <input
-                type="number"
-                min="1"
-                value={lesson.chapterOrder}
-                onChange={e => setField('chapterOrder', Math.max(1, Number(e.target.value)))}
-                className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-800 outline-none focus:ring-2 focus:ring-blue-500/30"
-              />
-            </Field>
+          </Section>
+
+          <Section title="Course Chapters" icon={<BookOpen size={14} />}>
+            <div className="space-y-2 max-h-64 overflow-y-auto pr-2 no-scrollbar">
+              {allLessons
+                .filter(l => l.course === lesson.course)
+                .sort((a, b) => (a.chapterOrder || 0) - (b.chapterOrder || 0))
+                .map((l, idx) => (
+                  <button
+                    key={l.slug}
+                    onClick={() => {
+                      if (l.slug === lesson.slug) return;
+                      if (window.confirm('Save changes before leaving?')) {
+                        handleSave().then(() => navigate(`/admin/lesson/${l.slug}`));
+                      } else {
+                        navigate(`/admin/lesson/${l.slug}`);
+                      }
+                    }}
+                    className={clsx(
+                      "w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold transition-all text-left group",
+                      l.slug === lesson.slug
+                        ? "bg-blue-600 text-white shadow-lg shadow-blue-100"
+                        : "bg-slate-50 text-slate-500 hover:bg-white hover:text-blue-600 border border-transparent hover:border-slate-200"
+                    )}
+                  >
+                    <span className={clsx(
+                      "w-5 h-5 rounded-full flex items-center justify-center text-[9px] shrink-0",
+                      l.slug === lesson.slug ? "bg-white/20 text-white" : "bg-slate-200 text-slate-500 group-hover:bg-blue-100 group-hover:text-blue-600"
+                    )}>
+                      {l.chapterOrder || idx + 1}
+                    </span>
+                    <span className="truncate">{l.title}</span>
+                  </button>
+                ))}
+              <button
+                onClick={() => navigate('/admin/lesson/new', { state: { topic: lesson.course } })}
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-[10px] font-black text-blue-600 hover:bg-blue-50 transition-all border border-dashed border-blue-200 mt-2 uppercase tracking-widest"
+              >
+                <Plus size={14} /> Add New Chapter
+              </button>
+            </div>
           </Section>
 
           <Section title="Lesson Abstract" icon={<AlignLeft size={14} />}>

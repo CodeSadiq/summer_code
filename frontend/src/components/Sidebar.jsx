@@ -49,7 +49,9 @@ export default function Sidebar({ collapsed, setCollapsed }) {
   const currentCourse = currentLesson?.course || (lessons.length > 0 ? lessons[0].course : 'HTML');
 
   // Filter lessons to only show those in the current course
-  const filteredLessons = lessons.filter(l => l.course === currentCourse);
+  const filteredLessons = lessons
+    .filter(l => l.course === currentCourse)
+    .sort((a, b) => (a.chapterOrder || 0) - (b.chapterOrder || 0));
 
   return (
     <>

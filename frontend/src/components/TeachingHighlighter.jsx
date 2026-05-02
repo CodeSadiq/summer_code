@@ -19,7 +19,7 @@ export default function TeachingHighlighter({ children, stepIndex, hasCodeBlock,
   }, [isCurrentBlock]);
 
   return (
-    <div 
+    <div
       ref={blockRef}
       className={clsx(
         "relative transition-all duration-300 w-full rounded-2xl",
@@ -30,12 +30,10 @@ export default function TeachingHighlighter({ children, stepIndex, hasCodeBlock,
       )}
     >
       {showTryMessage && (
-        <div className="flex items-center gap-2 mb-4 animate-entrance">
-          <div className="h-[1px] flex-1 bg-emerald-100 dark:bg-emerald-900" />
-          <span className="text-[11px] font-black uppercase tracking-[0.3em] text-emerald-600 dark:text-emerald-400 whitespace-nowrap px-4 py-1.5 bg-emerald-50 dark:bg-slate-900 rounded-full border border-emerald-100 dark:border-emerald-900">
-            Ab aap try kro!
+        <div className="flex justify-center mb-2 animate-pop-in">
+          <span className="text-[11px] font-black uppercase tracking-[0.2em] text-white whitespace-nowrap px-5 py-1.5 bg-emerald-500 rounded-full shadow-lg shadow-emerald-500/20 animate-pulse-subtle">
+            Ab aap karo!
           </span>
-          <div className="h-[1px] flex-1 bg-emerald-100 dark:bg-emerald-900" />
         </div>
       )}
 

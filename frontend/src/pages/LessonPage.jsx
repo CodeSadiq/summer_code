@@ -96,9 +96,13 @@ export default function LessonPage() {
     }
   }, [slug, setActiveLesson]);
 
-  const currentIdx = lessons.findIndex(l => l.slug === slug);
-  const prevLesson = currentIdx > 0 ? lessons[currentIdx - 1] : null;
-  const nextLesson = currentIdx < lessons.length - 1 ? lessons[currentIdx + 1] : null;
+  const courseLessons = lessons
+    .filter(l => l.course === lesson?.course)
+    .sort((a, b) => (a.chapterOrder || 0) - (b.chapterOrder || 0));
+
+  const currentIdx = courseLessons.findIndex(l => l.slug === slug);
+  const prevLesson = currentIdx > 0 ? courseLessons[currentIdx - 1] : null;
+  const nextLesson = currentIdx < courseLessons.length - 1 ? courseLessons[currentIdx + 1] : null;
 
   useEffect(() => {
     if (audioRef.current) {
@@ -217,8 +221,10 @@ export default function LessonPage() {
 
   return (
     <div className={clsx(
-      "mx-auto p-8 pt-12 md:p-12 md:pt-16 lg:p-16 lg:pt-20 relative font-sans animate-entrance w-full transition-all duration-500",
-      isSidebarCollapsed ? "max-w-6xl" : "max-w-4xl"
+      "p-8 pt-12 md:p-12 md:pt-16 lg:p-16 lg:pt-20 relative font-sans animate-entrance w-full transition-all duration-500",
+      isActive 
+        ? (isSidebarCollapsed ? "max-w-7xl ml-auto mr-[260px]" : "max-w-6xl ml-auto mr-[260px]")
+        : (isSidebarCollapsed ? "max-w-7xl mx-auto" : "max-w-5xl mx-auto")
     )}>
       <div className="flex-1 relative z-10 w-full">
         {isAdminMode && (

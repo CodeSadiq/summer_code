@@ -5,6 +5,17 @@ import { useTeachingState } from '../contexts/TeachingContext';
 import clsx from 'clsx';
 import { API_URL } from '../config';
 
+function NavLink({ to, label }) {
+  return (
+    <Link
+      to={to}
+      className="px-4 py-2 rounded-full text-[13px] font-bold text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-all duration-300 whitespace-nowrap"
+    >
+      {label}
+    </Link>
+  );
+}
+
 export default function TopNav() {
   const { isActive, startTeaching, activeLesson, continueTeaching, isEnglish } = useTeachingState();
   const [topics, setTopics] = useState([]);
@@ -58,7 +69,7 @@ export default function TopNav() {
         </Link>
         
         {/* Slidable Topics Container - Loading from DB */}
-        <div className="hidden md:flex flex-1 items-center max-w-2xl ml-4 lg:ml-8 relative group">
+        <div className="hidden md:flex items-center max-w-[300px] ml-4 relative group">
           <div className="bg-slate-200/40 border border-slate-200/50 rounded-full p-1 w-full overflow-hidden">
             <div className="flex items-center gap-1 overflow-x-auto no-scrollbar px-2 py-0.5 scroll-smooth">
               {topics.map((topic) => {
@@ -71,7 +82,7 @@ export default function TopNav() {
                     to={isNavigable ? `/lessons/${slug}` : '#'}
                     onClick={(e) => !isNavigable && e.preventDefault()}
                     className={clsx(
-                      "px-5 py-2 rounded-full text-[13px] font-bold transition-all duration-300 whitespace-nowrap",
+                      "px-4 py-2 rounded-full text-[12px] font-bold transition-all duration-300 whitespace-nowrap",
                       isNavigable
                         ? "text-slate-500 hover:text-slate-900"
                         : "text-slate-400 cursor-not-allowed opacity-60"
@@ -84,37 +95,40 @@ export default function TopNav() {
             </div>
           </div>
         </div>
+
+        {/* Main Navigation Links */}
+        <div className="hidden lg:flex items-center gap-1 ml-6 mr-4">
+          <NavLink to="/" label="Home" />
+          <NavLink to="/practice" label="Practice" />
+          <NavLink to="/certificates" label="Certificates" />
+        </div>
       </div>
 
       <div className="flex items-center gap-3 ml-4 flex-shrink-0">
-        {(activeLesson && location.pathname.startsWith('/lessons/')) && (
-          <button
-            onClick={(!isActive && !isEnglish) ? () => startTeaching(activeLesson) : undefined}
-            className={clsx(
-              "hidden md:flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold transition-all active:scale-95 shadow-sm",
-              isActive 
-                ? "bg-slate-100 text-slate-400 cursor-default border border-slate-200" 
-                : isEnglish
-                  ? "bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200 opacity-70"
+        {(activeLesson && location.pathname.startsWith('/lessons/')) && (() => {
+          const allAudioAvailable = activeLesson.blocks?.every(block => {
+            const script = isEnglish ? block.englishTeachingScript : block.teachingScript;
+            return !!(script?.audioUrl || script?.fileName || script?.uploadedName);
+          });
+
+          if (!allAudioAvailable && !isActive) return null;
+
+          return (
+            <button
+              onClick={!isActive ? () => startTeaching(activeLesson) : undefined}
+              className={clsx(
+                "hidden md:flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold transition-all active:scale-95 shadow-sm",
+                isActive 
+                  ? "bg-slate-100 text-slate-400 cursor-default border border-slate-200" 
                   : "bg-slate-900 hover:bg-slate-800 text-white"
-            )}
-            title={isEnglish ? "Guided teaching is not available in English mode" : ""}
-          >
-            {isEnglish ? (
-              <>
-                <Ban size={16} className="text-slate-400" />
-                <span className="hidden lg:inline">Teaching Not Available</span>
-                <span className="lg:hidden">Unavailable</span>
-              </>
-            ) : (
-              <>
-                <Sparkles size={16} className={clsx(isActive ? "text-slate-300" : "text-yellow-400")} />
-                <span className="hidden lg:inline">{isActive ? "Teaching Active" : "Start Guided Teaching"}</span>
-                <span className="lg:hidden">{isActive ? "Active" : "Start Teaching"}</span>
-              </>
-            )}
-          </button>
-        )}
+              )}
+            >
+              <Sparkles size={16} className={clsx(isActive ? "text-slate-300" : "text-yellow-400")} />
+              <span className="hidden lg:inline">{isActive ? "Teaching Active" : "Start Guided Teaching"}</span>
+              <span className="lg:hidden">{isActive ? "Active" : "Start Teaching"}</span>
+            </button>
+          );
+        })()}
         {localStorage.getItem('adminToken') || localStorage.getItem('studentToken') ? (
           <div className="relative">
             <button
@@ -129,8 +143,13 @@ export default function TopNav() {
               <div className="w-8 h-8 rounded-full bg-[#edf2f7] flex items-center justify-center">
                 <User size={16} className="text-[#2563eb]" />
               </div>
-              <span className="text-xs font-bold text-[#1e3a8a] tracking-wide hidden sm:inline uppercase">
-                {JSON.parse(localStorage.getItem('studentData'))?.name || 'ACCOUNT'}
+              <span className="text-xs font-bold text-[#1e3a8a] tracking-wide hidden sm:inline uppercase truncate max-w-[120px]">
+                {(() => {
+                  try {
+                    const data = localStorage.getItem('studentData');
+                    return data ? JSON.parse(data)?.name : 'ACCOUNT';
+                  } catch (e) { return 'ACCOUNT'; }
+                })()}
               </span>
               <ChevronDown size={16} className={clsx("text-slate-600 transition-transform duration-300", isUserMenuOpen && "rotate-180")} />
             </button>
@@ -139,19 +158,18 @@ export default function TopNav() {
               <>
                 <div className="fixed inset-0 z-40" onClick={() => setIsUserMenuOpen(false)} />
                 <div className="absolute right-0 mt-2 w-48 bg-white border border-slate-200 rounded-2xl shadow-2xl z-50 py-2 animate-entrance overflow-hidden">
-                  {localStorage.getItem('studentToken') && (
-                    <Link 
-                      to="/profile" 
-                      onClick={() => setIsUserMenuOpen(false)}
-                      className="flex items-center justify-between px-4 py-2.5 text-[10px] font-black text-slate-600 uppercase tracking-wider hover:bg-slate-50 transition-colors group"
-                    >
-                      <div className="flex items-center gap-3">
-                        <User size={14} className="text-blue-500" />
-                        <span>My Profile</span>
-                      </div>
-                      <ArrowRight size={12} className="opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
-                    </Link>
-                  )}
+
+                  <Link 
+                    to="/profile" 
+                    onClick={() => setIsUserMenuOpen(false)}
+                    className="flex items-center justify-between px-4 py-3 text-[10px] font-black text-slate-600 uppercase tracking-wider hover:bg-slate-50 transition-colors group"
+                  >
+                    <div className="flex items-center gap-3">
+                      <User size={14} className="text-blue-500" />
+                      <span>My Profile</span>
+                    </div>
+                    <ArrowRight size={12} className="opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
+                  </Link>
                   <div className="h-[1px] bg-slate-100 my-1 mx-2" />
                   <button
                     onClick={() => {

@@ -27,9 +27,6 @@ export function TeachingProvider({ children }) {
     if (isActive) {
       stopTeaching();
     }
-    
-    // If in English mode, we don't start teaching (as per request)
-    if (isEnglish) return;
 
     setActiveLesson(lesson);
     setIsActive(true);

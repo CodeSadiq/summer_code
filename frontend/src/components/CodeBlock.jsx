@@ -154,7 +154,7 @@ export default function CodeBlock({ visibleText, language, stepIndex, audioDurat
     return Prism.highlight(codeStr, lg, language);
   };
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 lg:gap-0 rounded-2xl border border-slate-200/60 dark:border-white/5 overflow-hidden shadow-2xl shadow-slate-200/50 dark:shadow-none my-10 w-full transition-shadow duration-500">
+    <div className="grid grid-cols-1 lg:grid-cols-2 lg:gap-0 rounded-2xl border border-slate-200/60 dark:border-white/5 overflow-hidden shadow-2xl shadow-slate-200/50 dark:shadow-none my-6 w-full transition-shadow duration-500">
       {/* Editor Side */}
       <div className="bg-[#0f172a] flex flex-col min-w-0 border-r border-slate-800">
         <div className="h-12 bg-[#0f172a] flex items-center px-4 justify-between border-b border-slate-800">
@@ -190,19 +190,19 @@ export default function CodeBlock({ visibleText, language, stepIndex, audioDurat
         </div>
         {!isBrowserLang && (
           <div className="bg-[#0b1121] border-t border-slate-800 p-4 shrink-0">
-             <div className="flex items-center justify-between mb-2">
-               <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Standard Input (stdin)</label>
-               {defaultStdin && (
-                 <span className="text-[9px] font-black uppercase tracking-widest bg-amber-500/10 text-amber-500 px-2 py-0.5 rounded border border-amber-500/20">Input Required</span>
-               )}
-             </div>
-             <textarea 
-               value={stdin}
-               onChange={e => setStdin(e.target.value)}
-               placeholder="Enter inputs here (separated by newlines)..."
-               readOnly={isReadOnly}
-               className="w-full bg-[#1e293b] border border-slate-700/50 rounded-lg p-3 text-xs text-slate-300 font-mono outline-none focus:border-blue-500/50 resize-y min-h-[60px]"
-             />
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Standard Input (stdin)</label>
+              {defaultStdin && (
+                <span className="text-[9px] font-black uppercase tracking-widest bg-amber-500/10 text-amber-500 px-2 py-0.5 rounded border border-amber-500/20">Input Required</span>
+              )}
+            </div>
+            <textarea
+              value={stdin}
+              onChange={e => setStdin(e.target.value)}
+              placeholder="Enter inputs here (separated by newlines)..."
+              readOnly={isReadOnly}
+              className="w-full bg-[#1e293b] border border-slate-700/50 rounded-lg p-3 text-xs text-slate-300 font-mono outline-none focus:border-blue-500/50 resize-y min-h-[60px]"
+            />
           </div>
         )}
       </div>
@@ -276,13 +276,13 @@ export default function CodeBlock({ visibleText, language, stepIndex, audioDurat
           ) : (
             <div className="w-full h-full bg-[#0f172a] text-slate-300 font-mono text-sm p-6 rounded-xl overflow-auto whitespace-pre-wrap">
               {isRunning ? (
-                 <div className="flex items-center gap-3 text-emerald-400 animate-pulse">
-                    <Loader2 className="animate-spin" size={18} /> Executing remotely...
-                 </div>
+                <div className="flex items-center gap-3 text-emerald-400 animate-pulse">
+                  <Loader2 className="animate-spin" size={18} /> Executing remotely...
+                </div>
               ) : (
-                 <div className={execError ? "text-red-400" : "text-emerald-400"}>
-                   {execResult || 'Ready to run.'}
-                 </div>
+                <div className={execError ? "text-red-400" : "text-emerald-400"}>
+                  {execResult || 'Ready to run.'}
+                </div>
               )}
             </div>
           )}
