@@ -9,6 +9,9 @@ import AdminPage from './pages/AdminPage';
 import AdminLessonEditor from './pages/AdminLessonEditor';
 import LoginPage from './pages/LoginPage';
 import ProfilePage from './pages/ProfilePage';
+import PracticePage from './pages/PracticePage';
+import AdminPractice from './pages/AdminPractice';
+import PracticeHub from './pages/PracticeHub';
 
 // Simple Protected Route
 const ProtectedRoute = ({ children }) => {
@@ -32,11 +35,18 @@ function App() {
           <Route path="/courses" element={<PublicLayout><AvailableCoursesPage /></PublicLayout>} />
 
           <Route path="/lessons/:slug" element={<MainLayout><LessonPage /></MainLayout>} />
+          <Route path="/practice" element={<PublicLayout><PracticeHub /></PublicLayout>} />
+          <Route path="/practice/:courseId/:topicId" element={<PublicLayout><PracticePage /></PublicLayout>} />
 
           {/* Protected Admin routes */}
           <Route path="/admin" element={
             <ProtectedRoute>
               <AdminPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/practice" element={
+            <ProtectedRoute>
+              <AdminPractice />
             </ProtectedRoute>
           } />
           <Route path="/admin/lesson/:slug" element={

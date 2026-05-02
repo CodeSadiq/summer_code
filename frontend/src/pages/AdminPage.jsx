@@ -4,7 +4,7 @@ import {
   Code2, Plus, Trash2, Edit3, GripVertical,
   BookOpen, LayoutDashboard, LogOut, Eye, ChevronRight,
   Sparkles, AlertCircle, CheckCircle2, Loader2, Music,
-  Layers, Cpu, MousePointer2, X, Settings
+  Layers, Cpu, MousePointer2, X, Settings, HelpCircle
 } from 'lucide-react';
 import clsx from 'clsx';
 import { API_URL } from '../config';
@@ -182,6 +182,12 @@ export default function AdminPage() {
         <nav className="flex-1 p-4 flex flex-col gap-1.5 overflow-y-auto no-scrollbar">
           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-3 mb-2">DASHBOARD</p>
           <SideItem icon={<LayoutDashboard size={18} />} label="Overview" active={activeCourse === 'All'} onClick={() => setActiveCourse('All')} />
+          <SideItem 
+            icon={<HelpCircle size={18} />} 
+            label="Practice Questions" 
+            active={false} 
+            onClick={() => navigate('/admin/practice')} 
+          />
 
           <div className="h-px bg-slate-100 my-4 mx-3" />
 

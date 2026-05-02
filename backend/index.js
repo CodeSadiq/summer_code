@@ -72,10 +72,32 @@ const userSchema = new mongoose.Schema({
   completedLessons: [String], // Array of lesson slugs
 }, { timestamps: true });
 
+const questionSchema = new mongoose.Schema({
+  topicId: String,
+  type: { type: String, enum: ['mcq', 'output', 'debug', 'coding'] },
+  question: String,
+  options: [String],
+  correctAnswer: String,
+  explanation: String,
+  difficulty: { type: String, enum: ['easy', 'medium', 'hard'], default: 'easy' },
+  starterCode: String,
+  testCases: [{ input: String, expectedOutput: String }],
+}, { timestamps: true });
+
+const progressSchema = new mongoose.Schema({
+  userId: String,
+  topicId: String,
+  score: Number,
+  attempts: { type: Number, default: 0 },
+  completedAt: { type: Date, default: Date.now }
+});
+
 const Topic = mongoose.model('Topic', topicSchema);
 const Lesson = mongoose.model('Lesson', lessonSchema);
 const AudioFile = mongoose.model('AudioFile', audioFileSchema);
 const User = mongoose.model('User', userSchema);
+const Question = mongoose.model('Question', questionSchema);
+const Progress = mongoose.model('Progress', progressSchema);
 
 // Multer: save audio to memory (then to DB)
 const storage = multer.memoryStorage();
@@ -509,6 +531,101 @@ app.post('/api/execute', async (req, res) => {
   } catch (err) {
     console.error('Code execution error:', err);
     res.status(500).json({ error: 'Code execution failed: ' + err.message });
+  }
+});
+
+// 12. PRACTICE SYSTEM APIs
+
+// Get Questions for Student (Adaptive Difficulty)
+app.get('/api/practice', async (req, res) => {
+  const { topicId, userId } = req.query;
+  try {
+    // 1. Check user's previous performance for adaptive difficulty
+    const lastProgress = await Progress.findOne({ userId, topicId }).sort({ completedAt: -1 });
+    
+    let targetDifficulty = 'easy';
+    if (lastProgress) {
+      if (lastProgress.score >= 80) targetDifficulty = 'hard';
+      else if (lastProgress.score >= 50) targetDifficulty = 'medium';
+    }
+
+    // 2. Fetch questions for the target difficulty
+    let questions = await Question.find({ topicId, difficulty: targetDifficulty });
+
+    // 3. Fallback: if not enough questions in target difficulty, pull from others
+    if (questions.length < 5) {
+      const additional = await Question.find({ 
+        topicId, 
+        difficulty: { $ne: targetDifficulty } 
+      }).limit(10 - questions.length);
+      questions = [...questions, ...additional];
+    }
+
+    // 4. Shuffle and limit to 10 questions max
+    const shuffled = questions.sort(() => 0.5 - Math.random()).slice(0, 10);
+    res.json(shuffled);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch practice questions' });
+  }
+});
+
+// Submit Practice Results
+app.post('/api/practice/submit', async (req, res) => {
+  try {
+    const { userId, topicId, score } = req.body;
+    const progress = new Progress({
+      userId,
+      topicId,
+      score,
+      completedAt: new Date()
+    });
+    await progress.save();
+    res.json({ success: true, message: 'Progress saved' });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to save progress' });
+  }
+});
+
+// Admin: Get All Questions (with filtering)
+app.get('/api/admin/practice', async (req, res) => {
+  const { topicId } = req.query;
+  try {
+    const filter = topicId ? { topicId } : {};
+    const questions = await Question.find(filter).sort({ createdAt: -1 });
+    res.json(questions);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch questions' });
+  }
+});
+
+// Admin: Add Question
+app.post('/api/admin/practice', async (req, res) => {
+  try {
+    const question = new Question(req.body);
+    await question.save();
+    res.json({ success: true, question });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to add question' });
+  }
+});
+
+// Admin: Update Question
+app.put('/api/admin/practice/:id', async (req, res) => {
+  try {
+    const updated = await Question.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    res.json({ success: true, question: updated });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to update question' });
+  }
+});
+
+// Admin: Delete Question
+app.delete('/api/admin/practice/:id', async (req, res) => {
+  try {
+    await Question.findByIdAndDelete(req.params.id);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to delete question' });
   }
 });
 

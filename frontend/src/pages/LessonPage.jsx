@@ -3,7 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { useTeachingState } from '../contexts/TeachingContext';
 import TeachingHighlighter from '../components/TeachingHighlighter';
 import CodeBlock from '../components/CodeBlock';
-import { Play, ArrowRight, ArrowLeft, AlertCircle, Sparkles } from 'lucide-react';
+import { Play, ArrowRight, ArrowLeft, AlertCircle, Sparkles, Trophy, Zap } from 'lucide-react';
 import clsx from 'clsx';
 import { API_URL } from '../config';
 
@@ -340,6 +340,29 @@ export default function LessonPage() {
               </div>
             );
           })}
+        </div>
+
+        {/* Practice CTA - Compact & Simple */}
+        <div className="mt-24 p-6 bg-emerald-50/40 border border-emerald-100 rounded-3xl flex flex-col md:flex-row items-center justify-between gap-6 animate-entrance">
+           <div className="flex items-center gap-5">
+              <div className="w-12 h-12 bg-emerald-500 text-white rounded-2xl flex items-center justify-center shrink-0 shadow-lg shadow-emerald-100">
+                <Zap size={24} fill="currentColor" />
+              </div>
+              <div className="text-left space-y-0.5">
+                <h3 className="text-lg font-black text-slate-900 tracking-tighter uppercase">
+                  {isEnglish ? "Ready for the Exercise?" : "Chapter khatam!"}
+                </h3>
+                <p className="text-slate-500 font-bold uppercase tracking-widest text-[9px]">
+                  {isEnglish ? "Test your skills with interactive exercises" : "Ab exercises karke apne skills check karo"}
+                </p>
+              </div>
+           </div>
+           <Link 
+             to={`/practice/${lesson.course}/${lesson.topic}`}
+             className="w-full md:w-auto bg-emerald-500 text-white px-8 py-3.5 rounded-2xl font-black text-[10px] uppercase tracking-[0.15em] hover:bg-emerald-600 shadow-xl shadow-emerald-100 transition-all active:scale-95 flex items-center justify-center gap-3"
+           >
+             {isEnglish ? "Start Exercise" : "Exercise Shuru Karo"} <Sparkles size={14} />
+           </Link>
         </div>
       </div>
 
