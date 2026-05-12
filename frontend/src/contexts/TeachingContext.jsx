@@ -1,37 +1,51 @@
+/**
+ * ==========================================
+ * STATE MANAGEMENT - TeachingContext.jsx
+ * ==========================================
+ * This file uses the React Context API to manage the "Teaching Session".
+ * It keeps track of what the AI teacher is doing, which step of the lesson we are on,
+ * and if the student is currently writing code.
+ */
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 
+// 1. Create the Context: Think of this as a global "radio station".
 const TeachingContext = createContext();
 
+// 2. Provider Component: This is the "radio tower" that broadcasts state to components.
 export function TeachingProvider({ children }) {
-  const [isActive, setIsActive] = useState(false);
-  const [mode, setMode] = useState('IDLE'); // IDLE | EXPLAINING | AT_CODE_BLOCK | USER_TRYING | BOT_CODING | COMPLETED
-  const [currentStep, setCurrentStep] = useState(0);
-  const [currentCodeLine, setCurrentCodeLine] = useState(0);
-  const [showContinueButton, setShowContinueButton] = useState(false);
-  const [userHasRun, setUserHasRun] = useState(false);
-  const [activeAnimations, setActiveAnimations] = useState(0);
-  const [isPaused, setIsPaused] = useState(false);
-  const [isSpeaking, setIsSpeaking] = useState(false);
-  const [currentWordIndex, setCurrentWordIndex] = useState(-1);
-  const [isAdminMode, setIsAdminMode] = useState(false);
-  const [activeLesson, setActiveLesson] = useState(null);
-  const [isEnglish, setIsEnglish] = useState(false);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  // --- STATE VARIABLES ---
+  const [isActive, setIsActive] = useState(false); // Is the AI teacher currently active?
+  const [mode, setMode] = useState('IDLE'); // What is the teacher doing? (IDLE, EXPLAINING, BOT_CODING, etc.)
+  const [currentStep, setCurrentStep] = useState(0); // Which block of the lesson are we on?
+  const [currentCodeLine, setCurrentCodeLine] = useState(0); // Which line of code is being typed?
+  const [showContinueButton, setShowContinueButton] = useState(false); // Should we show the 'Next' button?
+  const [userHasRun, setUserHasRun] = useState(false); // Has the student clicked 'Run Code' yet?
+  const [activeAnimations, setActiveAnimations] = useState(0); // Tracking active UI animations
+  const [isPaused, setIsPaused] = useState(false); // Is the teaching session paused?
+  const [isSpeaking, setIsSpeaking] = useState(false); // Is the AI currently speaking?
+  const [currentWordIndex, setCurrentWordIndex] = useState(-1); // For highlighting words as they are spoken
+  const [isAdminMode, setIsAdminMode] = useState(false); // Is the Admin panel visible?
+  const [activeLesson, setActiveLesson] = useState(null); // The actual lesson data being taught
+  const [isEnglish, setIsEnglish] = useState(false); // Language preference (English vs Hindi/other)
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false); // Mobile sidebar state
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false); // Desktop sidebar collapse state
 
   const location = useLocation();
 
+  /**
+   * START TEACHING: Initializes a session for a specific lesson.
+   */
   const startTeaching = (lesson) => {
-    // If already active, clear previous session first
-    if (isActive) {
-      stopTeaching();
-    }
+    // If a session was already running, stop it first.
+    if (isActive) stopTeaching();
 
     setActiveLesson(lesson);
     setIsActive(true);
     setCurrentStep(0);
     
+    // If the first block is code, wait for user to try it. Otherwise, start explaining.
     if (lesson && lesson.blocks[0]?.type === 'code') {
       setMode('WAITING_TO_TRY');
     } else {
@@ -43,6 +57,9 @@ export function TeachingProvider({ children }) {
     setIsPaused(false);
   };
 
+  /**
+   * STOP TEACHING: Resets everything to the default state.
+   */
   const stopTeaching = () => {
     setIsActive(false);
     setMode('IDLE');
@@ -50,45 +67,28 @@ export function TeachingProvider({ children }) {
     setCurrentWordIndex(-1);
   };
 
-  // Automatically stop teaching if user navigates away from lesson pages
+  // Automatically stop teaching if user navigates away from the lesson page.
   useEffect(() => {
     if (isActive && !location.pathname.startsWith('/lessons/')) {
       stopTeaching();
     }
   }, [location.pathname, isActive]);
 
-  // Turn off teaching when switching to English
-  useEffect(() => {
-    if (isEnglish && isActive) {
-      stopTeaching();
-    }
-  }, [isEnglish, isActive]);
-
-  const explainTopic = () => {
-    setMode('BOT_CODING');
-    // Start bot coding Logic inside the CodeBlock or in Context?
-  };
-
-  const explainLastTopic = () => {
-    if (currentStep > 0) {
-      setCurrentStep(prev => prev - 1);
-      setMode('EXPLAINING');
-    }
-  };
-
-  const togglePause = () => {
-    setIsPaused(prev => !prev);
-  };
-
+  /**
+   * CONTINUE TEACHING: Moves to the next step of the lesson.
+   */
   const continueTeaching = () => {
+    // Check if we reached the end of the lesson
     if (activeLesson && currentStep >= activeLesson.blocks.length - 1) {
       setMode('COMPLETED');
       setTimeout(() => stopTeaching(), 1000);
       return;
     }
+
     const nextStep = currentStep + 1;
     setCurrentStep(nextStep);
     
+    // Set mode based on what type of content is next
     if (activeLesson && activeLesson.blocks[nextStep]?.type === 'code') {
       setMode('WAITING_TO_TRY');
     } else {
@@ -96,6 +96,9 @@ export function TeachingProvider({ children }) {
     }
   };
 
+  /**
+   * JUMP TO STEP: Allows navigating to any part of the lesson directly.
+   */
   const jumpToStep = (stepIndex) => {
     if (!activeLesson || !isActive) return;
     setCurrentStep(stepIndex);
@@ -111,11 +114,18 @@ export function TeachingProvider({ children }) {
     setIsPaused(false);
   };
 
-  const startCodeExplanation = () => {
-    setMode('EXPLAINING_CODE');
+  // Helper functions for various UI actions
+  const explainTopic = () => setMode('BOT_CODING');
+  const explainLastTopic = () => {
+    if (currentStep > 0) {
+      setCurrentStep(prev => prev - 1);
+      setMode('EXPLAINING');
+    }
   };
+  const togglePause = () => setIsPaused(prev => !prev);
+  const startCodeExplanation = () => setMode('EXPLAINING_CODE');
 
-  // Setup Admin mode keyboard shortcut
+  // ADMIN SHORTCUT: Press Shift + A to toggle Admin Mode
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.shiftKey && e.key.toLowerCase() === 'a') {
@@ -126,6 +136,7 @@ export function TeachingProvider({ children }) {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
+  // 3. Prepare the "value" object containing all state and functions.
   const value = {
     isActive, setIsActive,
     mode, setMode,
@@ -147,10 +158,13 @@ export function TeachingProvider({ children }) {
   };
 
   return (
+    // 4. Wrap children in the Provider so they can use this data.
     <TeachingContext.Provider value={value}>
       {children}
     </TeachingContext.Provider>
   );
 }
 
+// 5. Custom Hook: Makes it easy to use this context in other components.
+// Example: const { mode } = useTeachingState();
 export const useTeachingState = () => useContext(TeachingContext);

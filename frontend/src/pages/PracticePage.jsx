@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { 
-  ChevronRight, ChevronLeft, CheckCircle2, XCircle, 
+import {
+  ChevronRight, ChevronLeft, CheckCircle2, XCircle,
   Trophy, RotateCcw, ArrowRight, Play, Loader2, Sparkles,
   HelpCircle, Code, Bug, Terminal
 } from 'lucide-react';
@@ -54,7 +54,7 @@ export default function PracticePage() {
 
   const handleSubmit = () => {
     if (isSubmitted) return;
-    
+
     let isCorrect = false;
     if (currentQuestion.type === 'mcq' || currentQuestion.type === 'output') {
       isCorrect = selectedOption === currentQuestion.correctAnswer;
@@ -112,14 +112,14 @@ export default function PracticePage() {
         })
       });
       const data = await res.json();
-      
+
       // Simple validation for practice: match output
       const success = data.output?.trim() === currentQuestion.correctAnswer?.trim();
       setExecutionResult({ output: data.output, success, error: data.error });
-      
+
       if (success) {
         // Auto submit for coding questions if correct
-        setSelectedOption(true); 
+        setSelectedOption(true);
       }
     } catch (err) {
       setExecutionResult({ output: 'Execution failed', error: true });
@@ -180,13 +180,13 @@ export default function PracticePage() {
           </div>
 
           <div className="flex flex-col sm:flex-row gap-4 pt-4">
-            <button 
+            <button
               onClick={() => window.location.reload()}
               className="flex-1 py-5 bg-white border-2 border-slate-200 text-slate-900 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-50 transition-all flex items-center justify-center gap-3"
             >
               <RotateCcw size={16} /> Retry Session
             </button>
-            <button 
+            <button
               onClick={() => navigate('/')}
               className="flex-1 py-5 bg-blue-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-blue-700 shadow-xl shadow-blue-200 transition-all flex items-center justify-center gap-3"
             >
@@ -215,40 +215,40 @@ export default function PracticePage() {
           </div>
 
           <div className="flex items-center gap-6">
-             <div className="flex flex-col items-end">
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Question {currentIndex + 1} of {questions.length}</span>
-                <div className="w-32 h-1.5 bg-slate-100 rounded-full mt-1.5 overflow-hidden border border-slate-200/50">
-                  <div 
-                    className="h-full bg-blue-600 transition-all duration-500"
-                    style={{ width: `${((currentIndex + 1) / questions.length) * 100}%` }}
-                  />
-                </div>
-             </div>
+            <div className="flex flex-col items-end">
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Question {currentIndex + 1} of {questions.length}</span>
+              <div className="w-32 h-1.5 bg-slate-100 rounded-full mt-1.5 overflow-hidden border border-slate-200/50">
+                <div
+                  className="h-full bg-blue-600 transition-all duration-500"
+                  style={{ width: `${((currentIndex + 1) / questions.length) * 100}%` }}
+                />
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
       <div className="max-w-4xl mx-auto px-6 pt-12">
         <div className="space-y-8 animate-entrance">
-          
+
           {/* Question Type Badge */}
           <div className="flex items-center gap-3">
-             <div className={clsx(
-               "px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-2",
-               currentQuestion.type === 'mcq' && "bg-blue-50 text-blue-600 border border-blue-100",
-               currentQuestion.type === 'output' && "bg-amber-50 text-amber-600 border border-amber-100",
-               currentQuestion.type === 'debug' && "bg-rose-50 text-rose-600 border border-rose-100",
-               currentQuestion.type === 'coding' && "bg-emerald-50 text-emerald-600 border border-emerald-100"
-             )}>
-                {currentQuestion.type === 'mcq' && <HelpCircle size={12} />}
-                {currentQuestion.type === 'output' && <Terminal size={12} />}
-                {currentQuestion.type === 'debug' && <Bug size={12} />}
-                {currentQuestion.type === 'coding' && <Code size={12} />}
-                {currentQuestion.type}
-             </div>
-             <span className="bg-slate-100 text-slate-500 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest">
-               {currentQuestion.difficulty}
-             </span>
+            <div className={clsx(
+              "px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-2",
+              currentQuestion.type === 'mcq' && "bg-blue-50 text-blue-600 border border-blue-100",
+              currentQuestion.type === 'output' && "bg-amber-50 text-amber-600 border border-amber-100",
+              currentQuestion.type === 'debug' && "bg-rose-50 text-rose-600 border border-rose-100",
+              currentQuestion.type === 'coding' && "bg-emerald-50 text-emerald-600 border border-emerald-100"
+            )}>
+              {currentQuestion.type === 'mcq' && <HelpCircle size={12} />}
+              {currentQuestion.type === 'output' && <Terminal size={12} />}
+              {currentQuestion.type === 'debug' && <Bug size={12} />}
+              {currentQuestion.type === 'coding' && <Code size={12} />}
+              {currentQuestion.type}
+            </div>
+            <span className="bg-slate-100 text-slate-500 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest">
+              {currentQuestion.difficulty}
+            </span>
           </div>
 
           {/* Question Title */}
@@ -296,7 +296,7 @@ export default function PracticePage() {
                 <div className="rounded-3xl border border-slate-200 overflow-hidden shadow-sm bg-slate-900">
                   <div className="bg-slate-800 px-6 py-3 flex items-center justify-between border-b border-slate-700">
                     <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Editor</span>
-                    <button 
+                    <button
                       onClick={handleRunCode}
                       disabled={isExecuting || isSubmitted}
                       className="bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 transition-all active:scale-95"
@@ -320,9 +320,9 @@ export default function PracticePage() {
                     executionResult.success ? "bg-emerald-50 border-emerald-200" : "bg-red-50 border-red-200"
                   )}>
                     <div className="flex items-center justify-between mb-2">
-                       <span className={clsx("text-[10px] font-black uppercase tracking-widest", executionResult.success ? "text-emerald-600" : "text-red-600")}>
-                         {executionResult.success ? "Test Passed" : "Test Failed"}
-                       </span>
+                      <span className={clsx("text-[10px] font-black uppercase tracking-widest", executionResult.success ? "text-emerald-600" : "text-red-600")}>
+                        {executionResult.success ? "Test Passed" : "Test Failed"}
+                      </span>
                     </div>
                     <pre className="text-xs font-mono text-slate-700">{executionResult.output}</pre>
                   </div>

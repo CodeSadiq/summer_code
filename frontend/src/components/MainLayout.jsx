@@ -1,26 +1,46 @@
+/**
+ * ==========================================
+ * UI STRUCTURE - MainLayout.jsx
+ * ==========================================
+ * This component defines the "Skeleton" of your application.
+ * It places the Top Navigation, the Sidebar, and the Teaching Panel
+ * in their correct positions.
+ */
+
 import React from 'react';
-import { useTeachingState } from '../contexts/TeachingContext';
+import { useTeachingState } from '../contexts/TeachingContext'; // Accessing global state
 import TopNav from './TopNav';
 import Sidebar from './Sidebar';
 import TeachingPanel from './TeachingPanel';
-import clsx from 'clsx';
-import { Play, ChevronRight, Menu, ArrowRight, Ban } from 'lucide-react';
+import clsx from 'clsx'; // A utility to combine CSS classes conditionally
+import { Play, ChevronRight, Menu, ArrowRight, Ban } from 'lucide-react'; // Icons
 
 export default function MainLayout({ children }) {
-  const { isActive, startTeaching, activeLesson, isSidebarOpen, setIsSidebarOpen, isEnglish, continueTeaching, isSidebarCollapsed, setIsSidebarCollapsed } = useTeachingState();
+  // Pulling needed data from our "radio station" (Context)
+  const { 
+    isActive, 
+    startTeaching, 
+    activeLesson, 
+    isSidebarOpen, 
+    setIsSidebarOpen, 
+    isEnglish, 
+    isSidebarCollapsed, 
+    setIsSidebarCollapsed 
+  } = useTeachingState();
 
-  // Swipe gesture state
+  // --- MOBILE SWIPE LOGIC ---
+  // These variables help detect if a user swipes their finger on a phone screen.
   const [touchStart, setTouchStart] = React.useState(null);
   const [touchEnd, setTouchEnd] = React.useState(null);
-  const minSwipeDistance = 50;
+  const minSwipeDistance = 50; // Minimum distance to consider it a "swipe"
 
   const handleTouchStart = (e) => {
     setTouchEnd(null);
-    setTouchStart(e.targetTouches[0].clientX);
+    setTouchStart(e.targetTouches[0].clientX); // Record where the touch started
   };
 
   const handleTouchMove = (e) => {
-    setTouchEnd(e.targetTouches[0].clientX);
+    setTouchEnd(e.targetTouches[0].clientX); // Update where the finger is moving
   };
 
   const handleTouchEnd = () => {
@@ -29,11 +49,11 @@ export default function MainLayout({ children }) {
     const isLeftSwipe = distance > minSwipeDistance;
     const isRightSwipe = distance < -minSwipeDistance;
 
-    // Right swipe to open (from anywhere near left edge)
+    // If swiped right near the left edge, open the sidebar.
     if (isRightSwipe && !isSidebarOpen && touchStart < 100) {
       setIsSidebarOpen(true);
     }
-    // Left swipe to close
+    // If swiped left while sidebar is open, close it.
     if (isLeftSwipe && isSidebarOpen) {
       setIsSidebarOpen(false);
     }
@@ -41,16 +61,20 @@ export default function MainLayout({ children }) {
 
   return (
     <div
+      // Main container: takes full screen height, hides overflow to prevent double scrolling.
       className="h-screen flex flex-col bg-slate-50 font-sans text-slate-900 overflow-hidden"
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
     >
+      {/* 1. Header Area */}
       <TopNav />
+
       <div className="flex flex-1 overflow-hidden relative">
+        {/* 2. Sidebar Area */}
         <Sidebar collapsed={isSidebarCollapsed} setCollapsed={setIsSidebarCollapsed} />
 
-        {/* Mobile Sidebar Reveal Trigger */}
+        {/* Mobile Sidebar Reveal Trigger: A small button on the left to help users find the sidebar */}
         {!isSidebarOpen && (
           <button
             onClick={() => setIsSidebarOpen(true)}
@@ -61,19 +85,22 @@ export default function MainLayout({ children }) {
           </button>
         )}
 
+        {/* 3. Main Content Area: This is where pages like LessonPage are displayed ({children}) */}
         <main className={clsx(
           "flex-1 overflow-y-auto w-full transition-all duration-500 bg-slate-50",
           "pl-0",
+          // Adjust padding based on whether the sidebar is collapsed or not.
           isSidebarCollapsed ? "md:pl-16" : "md:pl-64",
-          "md:pr-[260px]"
+          "md:pr-[260px]" // Permanently reserve space for the TeachingPanel
         )}>
           {children}
         </main>
 
-        {/* The Teaching Panel */}
+        {/* 4. Teaching Panel: The AI character panel on the right side. */}
         <TeachingPanel />
 
-        {/* Mobile FAB to start teaching or skip */}
+        {/* Mobile FAB (Floating Action Button): 
+            Only shows on lesson pages. Helps start the AI teaching on small screens. */}
         {activeLesson && location.pathname.startsWith('/lessons/') && (
           <button
             onClick={(!isActive && !isEnglish) ? () => startTeaching(activeLesson) : undefined}

@@ -1,12 +1,27 @@
+/**
+ * ==========================================
+ * LEARNING HUB - LessonPage.jsx
+ * ==========================================
+ * This is the most complex page in your app. It:
+ * 1. Fetches lesson content from the backend.
+ * 2. Plays AI voice instructions synchronized with the text.
+ * 3. Tracks student progress.
+ * 4. Renders interactive Code Blocks.
+ */
+
 import React, { useEffect, useState, useRef } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { useTeachingState } from '../contexts/TeachingContext';
-import TeachingHighlighter from '../components/TeachingHighlighter';
-import CodeBlock from '../components/CodeBlock';
+import { useParams, Link } from 'react-router-dom'; // Tools to get URL parameters and navigate
+import { useTeachingState } from '../contexts/TeachingContext'; // AI State
+import TeachingHighlighter from '../components/TeachingHighlighter'; // UI indicator
+import CodeBlock from '../components/CodeBlock'; // Interactive code runner
 import { Play, ArrowRight, ArrowLeft, AlertCircle, Sparkles, Trophy, Zap } from 'lucide-react';
 import clsx from 'clsx';
 import { API_URL } from '../config';
 
+/**
+ * KARAOKE TEXT COMPONENT
+ * A small helper to animate text as it's being explained.
+ */
 function KaraokeText({ text, isCurrentStep, isAdminMode }) {
   return (
     <span className={clsx(
@@ -20,10 +35,28 @@ function KaraokeText({ text, isCurrentStep, isAdminMode }) {
 }
 
 export default function LessonPage() {
+  /**
+   * TERMINOLOGY: useParams() (React Router Hook)
+   * This hook "grabs" the dynamic part of the URL.
+   * If the URL is '/lessons/intro-to-python', slug will be 'intro-to-python'.
+   */
   const { slug } = useParams();
+
+  /**
+   * TERMINOLOGY: useState() (React Hook)
+   * This is how React "remembers" things.
+   * 'lesson' stores the current data, 'setLesson' is the only way to update it.
+   * When you call setLesson, React automatically RE-RENDERS (refreshes) the UI.
+   */
   const [lesson, setLesson] = useState(null);
   const [lessons, setLessons] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  /**
+   * TERMINOLOGY: Custom Hook (useTeachingState)
+   * This pulls "Global State" from our TeachingContext.
+   * It's like a radio tuned to a specific station that everyone can hear.
+   */
   const {
     isActive, currentStep, isAdminMode,
     setIsSpeaking, mode, isPaused,
@@ -31,55 +64,74 @@ export default function LessonPage() {
     isEnglish, setIsEnglish, isSidebarCollapsed
   } = useTeachingState();
 
+  /**
+   * TERMINOLOGY DEEP-DIVE: useRef()
+   * -------------------------------
+   * Analogy: "Whiteboard vs. Sticky Note"
+   * 
+   * 1. useState (The Whiteboard): Every time you change it, React stops everything and 
+   *    re-renders the whole page to show the change.
+   * 
+   * 2. useRef (The Sticky Note): You can change its value (in .current) as much as you want, 
+   *    and React will NOT re-render. It stays in your "pocket" across renders.
+   * 
+   * WHY USE IT HERE?
+   * We store our Audio object in a Ref because if we used State, every time the audio 
+   * started, React would refresh the page, which would create a NEW audio object, 
+   * starting a never-ending loop of multiple voices playing at once!
+   * 
+   * useRef keeps the SAME audio object alive and stable throughout the lesson.
+   */
   const audioRef = useRef(null);
 
-  // Auto-advance to the next block after audio ends.
-  // Stops at code blocks so the user can try them.
   const autoAdvance = (block) => {
     if (!isActive) return;
     const nextIdx = currentStep + 1;
     if (!activeLesson || nextIdx >= activeLesson.blocks.length) return;
-    const nextBlock = activeLesson.blocks[nextIdx];
-    // Do not pause here. Let it continue to the code block so WAITING_TO_TRY starts.
-    // Small delay so the highlight clears before moving
     setTimeout(() => continueTeaching(), 400);
   };
 
+  /**
+   * TERMINOLOGY: useEffect() (React Hook)
+   * This handles "Side Effects" (things that happen outside of React).
+   * Here, we use it to FETCH data from the Backend Server.
+   * The [] at the end means "only run this once when the page first loads".
+   */
   useEffect(() => {
-    fetch(`${API_URL}/api/lessons`)
-      .then(res => res.json())
+    // fetch() is a standard web tool to make API calls to your Node/Express server.
+    fetch(`${API_URL}/api/lessons`, { cache: 'no-store' })
+      .then(res => res.json()) // Convert the raw response into a Javascript Object (JSON)
       .then(data => {
         if (Array.isArray(data)) setLessons(data);
-        else setLessons([]);
       })
-      .catch(err => {
-        console.error(err);
-        setLessons([]);
-      });
-  }, []);
+      .catch(err => console.error(err));
+  }, [slug]);
 
-
+  /**
+   * TERMINOLOGY: Dependency Array [slug, setActiveLesson]
+   * This useEffect runs every time the 'slug' (the lesson name in the URL) changes.
+   */
   useEffect(() => {
     setLoading(true);
-    fetch(`${API_URL}/api/lessons/${slug}`)
+    fetch(`${API_URL}/api/lessons/${slug}`, { cache: 'no-store' })
       .then(res => res.json())
       .then(data => {
-        if (data.error) {
-          setLesson(null);
-        } else {
+        if (!data.error) {
           setLesson(data);
           setActiveLesson(data);
         }
       })
-      .catch(err => {
-        console.error(err);
-        setLesson(null);
-      })
+      .catch(err => console.error(err))
       .finally(() => setLoading(false));
 
-    // Save progress for students
+    /**
+     * TERMINOLOGY: localStorage (Browser API)
+     * This is a small database inside the user's browser.
+     * We use it to store who is logged in so they don't have to login every time.
+     */
     const studentData = JSON.parse(localStorage.getItem('studentData'));
     if (studentData && slug) {
+      // Sending a POST request to update progress in MongoDB
       fetch(`${API_URL}/api/student/update-progress`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -91,11 +143,11 @@ export default function LessonPage() {
             const updatedData = { ...studentData, completedLessons: data.completedLessons };
             localStorage.setItem('studentData', JSON.stringify(updatedData));
           }
-        })
-        .catch(err => console.error('Error saving progress:', err));
+        });
     }
   }, [slug, setActiveLesson]);
 
+  // Logic to find Previous and Next lessons for the footer
   const courseLessons = lessons
     .filter(l => l.course === lesson?.course)
     .sort((a, b) => (a.chapterOrder || 0) - (b.chapterOrder || 0));
@@ -104,13 +156,17 @@ export default function LessonPage() {
   const prevLesson = currentIdx > 0 ? courseLessons[currentIdx - 1] : null;
   const nextLesson = currentIdx < courseLessons.length - 1 ? courseLessons[currentIdx + 1] : null;
 
+  // 3. AUDIO SYNCHRONIZATION LOGIC
+  // This useEffect runs every time the 'currentStep' or 'mode' changes.
   useEffect(() => {
+    // Stop any current audio before playing new one
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current.src = '';
       audioRef.current = null;
     }
 
+    // Only play if AI is active and in "EXPLAINING" mode
     if (!isActive || !lesson || (mode !== 'EXPLAINING' && mode !== 'EXPLAINING_CODE')) {
       setIsSpeaking(false);
       return;
@@ -118,56 +174,42 @@ export default function LessonPage() {
 
     const block = lesson.blocks[currentStep];
     const script = isEnglish ? block?.englishTeachingScript : block?.teachingScript;
-    
-    if (!script) {
+
+    if (!script || !script.fileName) {
       setIsSpeaking(false);
       return;
     }
 
     setIsSpeaking(true);
-    let finalAudioUrl = script.audioUrl;
+    // Construct the URL for the audio file stored in MongoDB
+    const finalAudioUrl = `${API_URL}/api/audio-db/${script.fileName}`;
 
-    // Fix: If audioUrl points to the old static path, or we only have a filename, 
-    // re-map it to the database-backed endpoint.
-    if (!finalAudioUrl && script.uploadedName) {
-      finalAudioUrl = `${API_URL}/api/audio-db/${script.uploadedName}`;
-    } else if (finalAudioUrl && !finalAudioUrl.startsWith('http')) {
-      // Prepend API_URL to relative paths and handle migration replacement
-      const relativePath = finalAudioUrl.includes('/audio/')
-        ? finalAudioUrl.replace('/audio/', '/api/audio-db/')
-        : finalAudioUrl;
-      finalAudioUrl = `${API_URL}${relativePath}`;
-    }
+    const audio = new Audio(finalAudioUrl);
+    audioRef.current = audio;
 
-
-
-    if (finalAudioUrl) {
-      const audio = new Audio(finalAudioUrl);
-      audioRef.current = audio;
-      if (!isPaused) {
-        audio.play().catch(() => {
-          setTimeout(() => {
-            if (audioRef.current === audio) {
-              setIsSpeaking(false);
-              autoAdvance(block);
-            }
-          }, script.duration || 3000);
-        });
-      }
-      audio.addEventListener('ended', () => {
-        setIsSpeaking(false);
-        autoAdvance(block);
+    if (!isPaused) {
+      audio.play().catch(() => {
+        // Fallback: If audio fails, wait for the estimated duration and move on.
+        setTimeout(() => {
+          if (audioRef.current === audio) {
+            setIsSpeaking(false);
+            autoAdvance(block);
+          }
+        }, script.duration || 3000);
       });
-      audio.addEventListener('error', () => setTimeout(() => setIsSpeaking(false), 2000));
-    } else {
-      const timer = setTimeout(() => {
-        setIsSpeaking(false);
-        autoAdvance(block);
-      }, script.duration || 3500);
-      return () => clearTimeout(timer);
     }
+
+    // When audio finishes, stop speaking and move to next block
+    audio.addEventListener('ended', () => {
+      setIsSpeaking(false);
+      autoAdvance(block);
+    });
+
+    audio.addEventListener('error', () => setIsSpeaking(false));
+
   }, [isActive, mode, currentStep, lesson, setIsSpeaking, isEnglish]);
 
+  // Handle Pause/Resume for audio
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
@@ -175,232 +217,133 @@ export default function LessonPage() {
     else if (isActive) audio.play().catch(() => { });
   }, [isPaused, isActive]);
 
-  // Cleanup audio when component unmounts
+  // Cleanup: Stop audio if the user leaves the page
   useEffect(() => {
     return () => {
       if (audioRef.current) {
         audioRef.current.pause();
-        audioRef.current.src = "";
         audioRef.current = null;
       }
       setIsSpeaking(false);
     };
   }, [setIsSpeaking]);
 
-  useEffect(() => {
-    if (!isActive && audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current = null;
-      setIsSpeaking(false);
-    }
-  }, [isActive, setIsSpeaking]);
+  // --- RENDERING ---
 
   if (loading && !lesson) {
-    return (
-      <div className="flex flex-col min-h-[calc(100vh-64px)] w-full max-w-5xl px-8 md:px-16 py-24 animate-pulse gap-6">
-        <div className="h-16 w-20 bg-emerald-50 rounded-3xl" />
-        <div className="h-12 w-3/4 bg-slate-50 rounded-3xl" />
-      </div>
-    );
+    return <div className="p-24 animate-pulse">Loading Lesson...</div>;
   }
 
-  if ((!lesson || !lesson.blocks) && !loading) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-12">
-        <div className="w-20 h-20 bg-red-50 rounded-3xl flex items-center justify-center mb-6">
-          <AlertCircle size={40} className="text-red-500" />
-        </div>
-        <h2 className="text-2xl font-black text-slate-800 mb-2">Lesson Not Found</h2>
-        <p className="text-slate-500 max-w-sm font-medium mb-8">
-          The requested lesson could not be loaded from the database. It might be missing or still migrating.
-        </p>
-        <Link to="/" className="text-blue-601 font-black uppercase tracking-widest text-[10px] bg-slate-100 px-8 py-4 rounded-2xl hover:bg-slate-200 transition-all">Back to Home</Link>
-      </div>
-    );
+  if (!lesson) {
+    return <div className="p-24 text-center">Lesson not found.</div>;
   }
 
   return (
     <div className={clsx(
-      "p-8 pt-12 md:p-12 md:pt-16 lg:p-16 lg:pt-20 relative font-sans animate-entrance w-full transition-all duration-500",
-      isActive 
-        ? (isSidebarCollapsed ? "max-w-7xl ml-auto mr-[260px]" : "max-w-6xl ml-auto mr-[260px]")
-        : (isSidebarCollapsed ? "max-w-7xl mx-auto" : "max-w-5xl mx-auto")
+      "p-8 pt-12 md:p-16 relative w-full transition-all duration-500",
+      isSidebarCollapsed ? "max-w-[1400px]" : "max-w-5xl",
+      "mx-auto"
     )}>
-      <div className="flex-1 relative z-10 w-full">
-        {isAdminMode && (
-          <div className="fixed top-0 left-0 right-0 bg-red-600/90 text-white font-black text-center py-2 text-[10px] tracking-[0.4em] z-[100] shadow-2xl uppercase">
-            Admin Preview Active
-          </div>
-        )}
 
-        {/* Header Section */}
-        <header className="mb-8">
-          <div className="flex flex-col">
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-blue-600 font-bold tracking-widest text-[10px] uppercase">
-                CHAPTER {String(lesson.chapterOrder || (currentIdx + 1)).padStart(2, '0')}
-              </span>
+      {/* 1. Header: Chapter Title and Language Switcher */}
+      <header className="mb-8">
+        <div className="flex items-center justify-between mb-4">
+          <span className="text-blue-600 font-bold text-[10px] uppercase tracking-widest">
+            CHAPTER {String(lesson.chapterOrder || (currentIdx + 1)).padStart(2, '0')}
+          </span>
 
-              <button
-                onClick={() => setIsEnglish(!isEnglish)}
-                className={clsx(
-                  "flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border-2",
-                  isEnglish
-                    ? "bg-emerald-500 border-emerald-500 text-white shadow-lg shadow-emerald-100"
-                    : "bg-white border-slate-200 text-slate-400 hover:border-emerald-500 hover:text-emerald-600"
-                )}
-              >
-                <Sparkles size={14} />
-                {isEnglish ? "Check in Hinglish" : "Check in English"}
-              </button>
-            </div>
+          {/* Language Switcher: Toggle between English and Hinglish */}
+          <button
+            onClick={() => setIsEnglish(!isEnglish)}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest bg-white border-2 border-slate-200"
+          >
+            <Sparkles size={14} />
+            {isEnglish ? "Hinglish Mode" : "English Mode"}
+          </button>
+        </div>
 
-            {lesson.blocks[0] && (
-              <TeachingHighlighter stepIndex={0} noIndicator={true}>
-                <h1
-                  className={clsx(
-                    "text-4xl md:text-5xl font-extrabold text-slate-900 dark:text-white tracking-tight leading-[1.05] drop-shadow-sm transition-all duration-300",
-                    (isActive && currentStep === 0) ? "text-blue-600 dark:text-blue-400 scale-[1.01] origin-left" : "",
-                    (isActive && currentStep !== 0) && "cursor-pointer hover:opacity-70"
-                  )}
-                  onClick={() => isActive && currentStep !== 0 && jumpToStep(0)}
-                >
-                  {(() => {
-                    if (isAdminMode && isActive && currentStep === 0) {
-                      return isEnglish ? (lesson.blocks[0].englishTeachingScript?.transcript || lesson.blocks[0].teachingScript?.transcript) : lesson.blocks[0].teachingScript?.transcript;
-                    }
-                    const txt = (isEnglish && lesson.blocks[0].englishText) ? lesson.blocks[0].englishText : lesson.blocks[0].visibleText;
-                    return txt;
-                  })()}
-                </h1>
-              </TeachingHighlighter>
+        {/* Lesson Main Title */}
+        {lesson.blocks[0] && (
+          <TeachingHighlighter stepIndex={0} noIndicator={true}>
+            <h1 className={clsx(
+              "text-4xl md:text-5xl font-black text-slate-900 leading-tight transition-all",
+              (isActive && currentStep === 0) ? "text-blue-600 scale-[1.01]" : ""
             )}
-          </div>
-        </header>
+            >
+              {(isEnglish && lesson.blocks[0].englishText) ? lesson.blocks[0].englishText : lesson.blocks[0].visibleText}
+            </h1>
+          </TeachingHighlighter>
+        )}
+      </header>
 
-        {/* Content Blocks */}
-        <div className="space-y-8">
-          {lesson.blocks.slice(1).map((block, idx) => {
-            const actualStep = idx + 1;
-            const isCurrentBlock = isActive && currentStep === actualStep;
+      {/* 2. Content Blocks: Text Paragraphs and Code Blocks */}
+      <div className="space-y-8">
+        {lesson.blocks.slice(1).map((block, idx) => {
+          const actualStep = idx + 1; // Correct index for teaching state
+          const isCurrentBlock = isActive && currentStep === actualStep;
 
-            const blockLayoutClass = clsx(
-              "transition-all duration-500",
-              isCurrentBlock ? "scale-[1.01] origin-left" : ""
-            );
-
-            if (block.type === 'code') {
-              return (
-                <div
-                  key={block.id}
-                  className={clsx(blockLayoutClass, isActive && currentStep !== actualStep && "cursor-pointer opacity-90 hover:opacity-100")}
-                  onClick={() => isActive && currentStep !== actualStep && jumpToStep(actualStep)}
-                >
-                  <TeachingHighlighter stepIndex={actualStep} hasCodeBlock={true}>
-                    <CodeBlock
-                      visibleText={block.visibleText}
-                      language={block.language || 'html'}
-                      stepIndex={actualStep}
-                      audioDuration={isEnglish ? block.englishTeachingScript?.duration : block.teachingScript?.duration}
-                      defaultStdin={block.defaultStdin}
-                    />
-                  </TeachingHighlighter>
-                </div>
-              );
-            }
-
+          // IF BLOCK IS CODE: Render the interactive editor
+          if (block.type === 'code') {
             return (
-              <div
-                key={block.id}
-                className={clsx(blockLayoutClass, isActive && currentStep !== actualStep && "cursor-pointer hover:opacity-70")}
-                onClick={() => isActive && currentStep !== actualStep && jumpToStep(actualStep)}
-              >
-                <TeachingHighlighter stepIndex={actualStep} hasCodeBlock={false}>
-                  <p className={clsx(
-                    "text-xl leading-relaxed transition-all duration-500 w-full",
-                    isSidebarCollapsed ? "md:max-w-4xl" : "md:max-w-2xl",
-                    isCurrentBlock
-                      ? "text-slate-900 dark:text-white font-bold"
-                      : "text-slate-700 dark:text-slate-300 font-medium"
-                  )}>
-                    {isAdminMode && isCurrentBlock
-                      ? (
-                        <span className="font-bold text-red-600 dark:text-red-400 border-b-4 border-red-100 dark:border-red-900/40 pb-1">
-                          {isEnglish ? (block.englishTeachingScript?.transcript || block.teachingScript?.transcript) : block.teachingScript?.transcript}
-                        </span>
-                      )
-                      : <KaraokeText
-                        text={(isEnglish && block.englishText) ? block.englishText : block.visibleText}
-                        isCurrentStep={isCurrentBlock}
-                        isAdminMode={isAdminMode}
-                      />
-                    }
-                  </p>
+              <div key={block.id} onClick={() => isActive && jumpToStep(actualStep)}>
+                <TeachingHighlighter stepIndex={actualStep} hasCodeBlock={true}>
+                  <CodeBlock
+                    visibleText={block.visibleText}
+                    language={block.language || 'html'}
+                    stepIndex={actualStep}
+                  />
                 </TeachingHighlighter>
               </div>
             );
-          })}
-        </div>
+          }
 
-        {/* Practice CTA - Compact & Simple */}
-        <div className="mt-24 p-6 bg-emerald-50/40 border border-emerald-100 rounded-3xl flex flex-col md:flex-row items-center justify-between gap-6 animate-entrance">
-           <div className="flex items-center gap-5">
-              <div className="w-12 h-12 bg-emerald-500 text-white rounded-2xl flex items-center justify-center shrink-0 shadow-lg shadow-emerald-100">
-                <Zap size={24} fill="currentColor" />
-              </div>
-              <div className="text-left space-y-0.5">
-                <h3 className="text-lg font-black text-slate-900 tracking-tighter uppercase">
-                  {isEnglish ? "Ready for the Exercise?" : "Chapter khatam!"}
-                </h3>
-                <p className="text-slate-500 font-bold uppercase tracking-widest text-[9px]">
-                  {isEnglish ? "Test your skills with interactive exercises" : "Ab exercises karke apne skills check karo"}
+          // IF BLOCK IS TEXT: Render normal paragraph
+          return (
+            <div key={block.id} onClick={() => isActive && jumpToStep(actualStep)}>
+              <TeachingHighlighter stepIndex={actualStep}>
+                <p className={clsx(
+                  "text-xl leading-relaxed transition-all duration-500",
+                  isCurrentBlock ? "text-slate-900 font-bold" : "text-slate-700 font-medium"
+                )}>
+                  <KaraokeText
+                    text={(isEnglish && block.englishText) ? block.englishText : block.visibleText}
+                    isCurrentStep={isCurrentBlock}
+                  />
                 </p>
-              </div>
-           </div>
-           <Link 
-             to={`/practice/${lesson.course}/${lesson.topic}`}
-             className="w-full md:w-auto bg-emerald-500 text-white px-8 py-3.5 rounded-2xl font-black text-[10px] uppercase tracking-[0.15em] hover:bg-emerald-600 shadow-xl shadow-emerald-100 transition-all active:scale-95 flex items-center justify-center gap-3"
-           >
-             {isEnglish ? "Start Exercise" : "Exercise Shuru Karo"} <Sparkles size={14} />
-           </Link>
-        </div>
+              </TeachingHighlighter>
+            </div>
+          );
+        })}
       </div>
 
-      {/* Footer Navigation */}
-      <div className="relative z-10 mt-20 pt-8 border-t border-slate-200 dark:border-white/5 flex flex-col md:flex-row justify-between items-center gap-6 pb-12 transition-all duration-300">
-        <div className="flex-1 w-full md:w-auto">
-          {prevLesson ? (
-            <Link
-              to={`/lessons/${prevLesson.slug}`}
-              className="flex items-center gap-3 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors group"
-            >
-              <div className="w-8 h-8 rounded-full border border-slate-200 dark:border-white/10 flex items-center justify-center shrink-0 group-hover:border-slate-300 dark:group-hover:border-white/20">
-                <ArrowLeft size={16} />
-              </div>
-              <span className="text-sm font-semibold">{prevLesson.title}</span>
-            </Link>
-          ) : (
-            <div className="h-1" />
-          )}
+      {/* 3. Practice CTA: Shown at the end of the lesson */}
+      <div className="mt-24 p-8 bg-emerald-50 rounded-3xl flex items-center justify-between">
+        <div className="flex items-center gap-5">
+          <Zap className="text-emerald-500" size={32} />
+          <div>
+            <h3 className="text-lg font-black uppercase">Ready for Practice?</h3>
+            <p className="text-[10px] text-slate-500 uppercase tracking-widest">Test what you just learned</p>
+          </div>
         </div>
-
-        <div className="flex-1 flex justify-end w-full md:w-auto">
-          {nextLesson ? (
-            <Link
-              to={`/lessons/${nextLesson.slug}`}
-              className="flex items-center gap-3 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors group flex-row-reverse"
-            >
-              <div className="w-8 h-8 rounded-full border border-slate-200 dark:border-white/10 flex items-center justify-center shrink-0 group-hover:border-slate-300 dark:group-hover:border-white/20">
-                <ArrowRight size={16} />
-              </div>
-              <span className="text-sm font-semibold">{nextLesson.title}</span>
-            </Link>
-          ) : (
-            <div className="text-sm font-semibold text-slate-400 dark:text-slate-600">End of Course</div>
-          )}
-        </div>
+        <Link to={`/practice/${lesson.course}/${lesson.topic}`} className="bg-emerald-500 text-white px-8 py-3 rounded-2xl font-black uppercase text-[10px]">
+          Start Exercise
+        </Link>
       </div>
 
+      {/* 4. Navigation Footer: Prev/Next Lesson links */}
+      <footer className="mt-20 pt-8 border-t flex justify-between">
+        {prevLesson && (
+          <Link to={`/lessons/${prevLesson.slug}`} className="flex items-center gap-3 text-slate-500 hover:text-slate-900 transition-colors">
+            <ArrowLeft size={16} /> <span>{prevLesson.title}</span>
+          </Link>
+        )}
+        <div className="flex-1" />
+        {nextLesson && (
+          <Link to={`/lessons/${nextLesson.slug}`} className="flex items-center gap-3 text-slate-500 hover:text-slate-900 transition-colors flex-row-reverse">
+            <ArrowRight size={16} /> <span>{nextLesson.title}</span>
+          </Link>
+        )}
+      </footer>
     </div>
   );
 }

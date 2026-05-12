@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Plus, Search, Edit2, Trash2, ChevronRight, 
-  HelpCircle, Code, Bug, Terminal, Loader2, Save, X 
+import {
+  Plus, Search, Edit2, Trash2, ChevronRight,
+  HelpCircle, Code, Bug, Terminal, Loader2, Save, X
 } from 'lucide-react';
 import { API_URL } from '../config';
 import clsx from 'clsx';
@@ -43,7 +43,7 @@ export default function AdminPractice() {
   const fetchQuestions = async () => {
     setLoading(true);
     try {
-      const url = selectedTopic 
+      const url = selectedTopic
         ? `${API_URL}/api/admin/practice?topicId=${selectedTopic}`
         : `${API_URL}/api/admin/practice`;
       const res = await fetch(url);
@@ -62,7 +62,7 @@ export default function AdminPractice() {
 
   const handleSave = async (e) => {
     e.preventDefault();
-    const url = editingQuestion 
+    const url = editingQuestion
       ? `${API_URL}/api/admin/practice/${editingQuestion._id}`
       : `${API_URL}/api/admin/practice`;
     const method = editingQuestion ? 'PUT' : 'POST';
@@ -118,14 +118,14 @@ export default function AdminPractice() {
   return (
     <div className="min-h-screen bg-slate-50 p-8 font-sans">
       <div className="max-w-7xl mx-auto space-y-8">
-        
+
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="space-y-1">
             <h1 className="text-4xl font-black text-slate-900 tracking-tighter">Practice Management</h1>
             <p className="text-slate-500 font-medium">Create and manage topic-based practice questions</p>
           </div>
-          <button 
+          <button
             onClick={resetForm}
             className="bg-blue-600 text-white px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-blue-700 shadow-xl shadow-blue-200 transition-all flex items-center gap-3"
           >
@@ -182,7 +182,7 @@ export default function AdminPractice() {
                   <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">{q.topicId} • {q.type}</p>
                 </div>
               </div>
-              
+
               <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all">
                 <button onClick={() => openEdit(q)} className="p-3 bg-slate-50 text-slate-600 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition-all">
                   <Edit2 size={18} />
@@ -217,7 +217,7 @@ export default function AdminPractice() {
                   <select
                     required
                     value={formData.topicId}
-                    onChange={(e) => setFormData({...formData, topicId: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, topicId: e.target.value })}
                     className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 font-bold outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="">Select Topic</option>
@@ -228,7 +228,7 @@ export default function AdminPractice() {
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2">Question Type</label>
                   <select
                     value={formData.type}
-                    onChange={(e) => setFormData({...formData, type: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, type: e.target.value })}
                     className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 font-bold outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="mcq">MCQ</option>
@@ -244,7 +244,7 @@ export default function AdminPractice() {
                 <textarea
                   required
                   value={formData.question}
-                  onChange={(e) => setFormData({...formData, question: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, question: e.target.value })}
                   className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 font-bold outline-none focus:ring-2 focus:ring-blue-500 h-24"
                 />
               </div>
@@ -256,12 +256,12 @@ export default function AdminPractice() {
                     {formData.options.map((opt, i) => (
                       <input
                         key={i}
-                        placeholder={`Option ${i+1}`}
+                        placeholder={`Option ${i + 1}`}
                         value={opt}
                         onChange={(e) => {
                           const newOpts = [...formData.options];
                           newOpts[i] = e.target.value;
-                          setFormData({...formData, options: newOpts});
+                          setFormData({ ...formData, options: newOpts });
                         }}
                         className="bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 font-bold outline-none focus:ring-2 focus:ring-blue-500"
                       />
@@ -276,7 +276,7 @@ export default function AdminPractice() {
                   <input
                     required
                     value={formData.correctAnswer}
-                    onChange={(e) => setFormData({...formData, correctAnswer: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, correctAnswer: e.target.value })}
                     placeholder="Exact text match"
                     className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 font-bold outline-none focus:ring-2 focus:ring-blue-500"
                   />
@@ -285,7 +285,7 @@ export default function AdminPractice() {
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2">Difficulty</label>
                   <select
                     value={formData.difficulty}
-                    onChange={(e) => setFormData({...formData, difficulty: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, difficulty: e.target.value })}
                     className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 font-bold outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="easy">Easy</option>
@@ -300,7 +300,7 @@ export default function AdminPractice() {
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2">Starter Code</label>
                   <textarea
                     value={formData.starterCode}
-                    onChange={(e) => setFormData({...formData, starterCode: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, starterCode: e.target.value })}
                     className="w-full bg-slate-900 text-emerald-400 font-mono p-6 rounded-2xl outline-none h-40"
                   />
                 </div>
@@ -310,7 +310,7 @@ export default function AdminPractice() {
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2">Explanation</label>
                 <textarea
                   value={formData.explanation}
-                  onChange={(e) => setFormData({...formData, explanation: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, explanation: e.target.value })}
                   className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 font-bold outline-none focus:ring-2 focus:ring-blue-500 h-24"
                 />
               </div>
