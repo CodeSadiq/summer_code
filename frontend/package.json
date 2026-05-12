@@ -22,11 +22,7 @@
     "react-dom": "^19.2.4",
     "react-router-dom": "^7.13.2",
     "react-simple-code-editor": "^0.14.1",
-    "tailwind-merge": "^3.5.0",
-    "//4": "Vite: The fast build tool that runs your local server.",
-    "//5": "React: The core library for building the UI components.",
-    "//6": "Lucide-React: The library used for all those beautiful icons.",
-    "//7": "Google-OAuth: Used for the 'Sign in with Google' feature."
+    "tailwind-merge": "^3.5.0"
   },
   "//8": "Tools used only during development (not in the final website).",
   "devDependencies": {
@@ -41,12 +37,6 @@
     "globals": "^17.4.0",
     "postcss": "^8.5.8",
     "tailwindcss": "^3.4.19",
-    "vite": "^8.0.1",
-    "//9": "ESLint: A 'Spellchecker' for your code that finds bugs as you type.",
-    "//10": "@Types: Provides 'Autofill' suggestions in VS Code for React.",
-    "//11": "Vite Plugin: A bridge that allows Vite to understand and process React files.",
-    "//12": "Tailwind/PostCSS: The engine that converts your CSS classes into a real stylesheet.",
-    "//13": "Autoprefixer: Makes sure your CSS works on all browsers (Chrome, Safari, etc.).",
-    "//14": "Vite: The builder. It packages your code into a small, fast website bundle."
+    "vite": "^8.0.1"
   }
 }

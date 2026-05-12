@@ -18,11 +18,6 @@
     "google-auth-library": "^10.6.2",
     "mongoose": "^8.3.4",
     "multer": "^2.1.1",
-    "node-fetch": "^3.3.2",
-    "//4": "Express: The framework that handles the 'API' requests.",
-    "//5": "Mongoose: The tool that connects your server to MongoDB.",
-    "//6": "Multer: Used for handling file uploads (like lesson images/audio).",
-    "//7": "Dotenv: Loads your secret keys from the .env file.",
-    "//8": "ElevenLabs: The AI library that generates the teacher's voice."
+    "node-fetch": "^3.3.2"
   }
 }
