@@ -50,7 +50,7 @@ function App() {
           {/* Learning Content: Uses MainLayout (likely has a sidebar) */}
           <Route path="/lessons/:slug" element={<MainLayout><LessonPage /></MainLayout>} />
           <Route path="/practice" element={<PublicLayout><PracticeHub /></PublicLayout>} />
-          <Route path="/practice/:courseId/:topicId" element={<PublicLayout><PracticePage /></PublicLayout>} />
+          <Route path="/practice/:courseId/:topicId" element={<MainLayout><PracticePage /></MainLayout>} />
 
           {/* Admin Routes: Protected by the ProtectedRoute component */}
           <Route path="/admin" element={
@@ -59,6 +59,21 @@ function App() {
             </ProtectedRoute>
           } />
           <Route path="/admin/practice" element={
+            <ProtectedRoute>
+              <AdminPractice />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/practice/:topicId" element={
+            <ProtectedRoute>
+              <AdminPractice />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/practice/:topicId/add" element={
+            <ProtectedRoute>
+              <AdminPractice />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/practice/:topicId/edit/:questionId" element={
             <ProtectedRoute>
               <AdminPractice />
             </ProtectedRoute>

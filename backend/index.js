@@ -99,6 +99,7 @@ const userSchema = new mongoose.Schema({
 // Question Schema: Stores practice/quiz questions for the adaptive practice system.
 const questionSchema = new mongoose.Schema({
   topicId: String,                    // Link to a specific Topic
+  lessonId: String,                   // Link to a specific Lesson (Chapter)
   type: { type: String, enum: ['mcq', 'output', 'debug', 'coding'] }, // Type of question
   question: String,
   options: [String],                  // Only for MCQ
@@ -576,14 +577,20 @@ app.get('/api/practice', async (req, res) => {
     }
 
     // 2. Fetch questions for the target difficulty
-    let questions = await Question.find({ topicId, difficulty: targetDifficulty });
+    const query = { topicId, difficulty: targetDifficulty };
+    if (req.query.lessonId) query.lessonId = req.query.lessonId;
+    
+    let questions = await Question.find(query);
 
     // 3. Fallback: if not enough questions in target difficulty, pull from others
     if (questions.length < 5) {
-      const additional = await Question.find({
+      const fallbackQuery = {
         topicId,
         difficulty: { $ne: targetDifficulty }
-      }).limit(10 - questions.length);
+      };
+      if (req.query.lessonId) fallbackQuery.lessonId = req.query.lessonId;
+      
+      const additional = await Question.find(fallbackQuery).limit(10 - questions.length);
       questions = [...questions, ...additional];
     }
 
@@ -610,7 +617,10 @@ app.post('/api/practice/submit', async (req, res) => {
 // Admin: Question Management
 app.get('/api/admin/practice', async (req, res) => {
   try {
-    const filter = req.query.topicId ? { topicId: req.query.topicId } : {};
+    const filter = {};
+    if (req.query.topicId) filter.topicId = req.query.topicId;
+    if (req.query.lessonId) filter.lessonId = req.query.lessonId;
+    
     const questions = await Question.find(filter).sort({ createdAt: -1 });
     res.json(questions);
   } catch (err) { res.status(500).json({ error: 'Error' }); }

@@ -14,19 +14,18 @@ export default function PracticePage() {
   const navigate = useNavigate();
   const [questions, setQuestions] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [selectedOption, setSelectedOption] = useState(null);
-  const [isSubmitted, setIsSubmitted] = useState(false);
-  const [score, setScore] = useState(0);
-  const [showSummary, setShowSummary] = useState(false);
+  const [answers, setAnswers] = useState({}); // { index: { selectedOption, isSubmitted, isCorrect, isWrong, userCode, executionResult } }
   const [loading, setLoading] = useState(true);
-  const [userCode, setUserCode] = useState('');
-  const [executionResult, setExecutionResult] = useState(null);
+  const [showSummary, setShowSummary] = useState(false);
+  const [score, setScore] = useState(0);
   const [isExecuting, setIsExecuting] = useState(false);
-
+  const [lessonTitle, setLessonTitle] = useState('');
+  
   const user = JSON.parse(localStorage.getItem('studentData') || '{}');
 
   useEffect(() => {
     fetchQuestions();
+    fetchLessonTitle();
   }, [topicId]);
 
   const fetchQuestions = async () => {
@@ -35,8 +34,12 @@ export default function PracticePage() {
       const res = await fetch(`${API_URL}/api/practice?topicId=${topicId}&userId=${user.email}`);
       const data = await res.json();
       setQuestions(data);
-      if (data.length > 0 && data[0].starterCode) {
-        setUserCode(data[0].starterCode);
+      
+      // Initialize first question answer
+      if (data.length > 0) {
+        setAnswers({
+          0: { selectedOption: null, isSubmitted: false, userCode: data[0].starterCode || '' }
+        });
       }
     } catch (err) {
       console.error('Failed to fetch questions:', err);
@@ -45,40 +48,70 @@ export default function PracticePage() {
     }
   };
 
-  const currentQuestion = questions[currentIndex];
+  const fetchLessonTitle = async () => {
+    try {
+      const res = await fetch(`${API_URL}/api/lessons`);
+      const data = await res.json();
+      const lesson = data.find(l => l.slug === topicId);
+      if (lesson) setLessonTitle(lesson.title);
+      else setLessonTitle(topicId);
+    } catch (err) {
+      setLessonTitle(topicId);
+    }
+  };
+
+  const currentQuestion = questions[currentIndex] || {};
+  const currentAnswer = answers[currentIndex] || { selectedOption: null, isSubmitted: false, userCode: currentQuestion.starterCode || '' };
 
   const handleOptionSelect = (option) => {
-    if (isSubmitted) return;
-    setSelectedOption(option);
+    if (currentAnswer.isSubmitted) return;
+    setAnswers(prev => ({
+      ...prev,
+      [currentIndex]: { ...prev[currentIndex], selectedOption: option }
+    }));
   };
 
   const handleSubmit = () => {
-    if (isSubmitted) return;
+    if (currentAnswer.isSubmitted) return;
 
     let isCorrect = false;
     if (currentQuestion.type === 'mcq' || currentQuestion.type === 'output') {
-      isCorrect = selectedOption === currentQuestion.correctAnswer;
+      isCorrect = currentAnswer.selectedOption === currentQuestion.correctAnswer;
     } else if (currentQuestion.type === 'debug' || currentQuestion.type === 'coding') {
-      // For simplicity in this demo, we check if execution passed
-      isCorrect = executionResult?.success;
+      isCorrect = currentAnswer.executionResult?.success;
     }
 
     if (isCorrect) setScore(prev => prev + 1);
-    setIsSubmitted(true);
+    
+    setAnswers(prev => ({
+      ...prev,
+      [currentIndex]: { 
+        ...prev[currentIndex], 
+        isSubmitted: true, 
+        isCorrect, 
+        isWrong: !isCorrect 
+      }
+    }));
   };
 
   const handleNext = () => {
     if (currentIndex < questions.length - 1) {
       const nextIndex = currentIndex + 1;
       setCurrentIndex(nextIndex);
-      setSelectedOption(null);
-      setIsSubmitted(false);
-      setExecutionResult(null);
-      if (questions[nextIndex].starterCode) {
-        setUserCode(questions[nextIndex].starterCode);
+      if (!answers[nextIndex]) {
+        setAnswers(prev => ({
+          ...prev,
+          [nextIndex]: { selectedOption: null, isSubmitted: false, userCode: questions[nextIndex].starterCode || '' }
+        }));
       }
     } else {
       submitFinalScore();
+    }
+  };
+
+  const handleBack = () => {
+    if (currentIndex > 0) {
+      setCurrentIndex(prev => prev - 1);
     }
   };
 
@@ -107,22 +140,34 @@ export default function PracticePage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          code: userCode,
-          language: 'javascript', // Defaulting to JS for practice
+          code: currentAnswer.userCode,
+          language: 'javascript',
         })
       });
       const data = await res.json();
-
-      // Simple validation for practice: match output
       const success = data.output?.trim() === currentQuestion.correctAnswer?.trim();
-      setExecutionResult({ output: data.output, success, error: data.error });
+      
+      setAnswers(prev => ({
+        ...prev,
+        [currentIndex]: { 
+          ...prev[currentIndex], 
+          executionResult: { output: data.output, success, error: data.error },
+          isCorrect: success,
+          isWrong: !success
+        }
+      }));
 
       if (success) {
-        // Auto submit for coding questions if correct
-        setSelectedOption(true);
+        setAnswers(prev => ({
+          ...prev,
+          [currentIndex]: { ...prev[currentIndex], isSubmitted: true }
+        }));
       }
     } catch (err) {
-      setExecutionResult({ output: 'Execution failed', error: true });
+      setAnswers(prev => ({
+        ...prev,
+        [currentIndex]: { ...prev[currentIndex], executionResult: { output: 'Execution failed', error: true } }
+      }));
     } finally {
       setIsExecuting(false);
     }
@@ -130,7 +175,7 @@ export default function PracticePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#fafaf9] flex items-center justify-center">
+      <div className="min-h-screen bg-[#2e3748] flex items-center justify-center">
         <Loader2 className="w-12 h-12 text-blue-600 animate-spin" />
       </div>
     );
@@ -138,12 +183,12 @@ export default function PracticePage() {
 
   if (questions.length === 0) {
     return (
-      <div className="min-h-screen bg-[#fafaf9] flex items-center justify-center p-6 text-center">
+      <div className="min-h-screen bg-[#2e3748] flex items-center justify-center p-6 text-center">
         <div className="space-y-6">
           <HelpCircle size={64} className="mx-auto text-slate-300" />
-          <h2 className="text-2xl font-black text-slate-900 uppercase">No Questions Found</h2>
-          <p className="text-slate-500">We couldn't find any practice questions for this topic yet.</p>
-          <button onClick={() => navigate(-1)} className="px-8 py-3 bg-slate-900 text-white rounded-2xl font-bold">Go Back</button>
+          <h2 className="text-2xl font-black text-white uppercase">No Questions Found</h2>
+          <p className="text-slate-400">We couldn't find any practice questions for this topic yet.</p>
+          <button onClick={() => navigate(-1)} className="px-8 py-3 bg-white text-slate-900 rounded-2xl font-bold">Go Back</button>
         </div>
       </div>
     );
@@ -152,45 +197,39 @@ export default function PracticePage() {
   if (showSummary) {
     const perc = Math.round((score / questions.length) * 100);
     return (
-      <div className="min-h-screen bg-[#fafaf9] flex items-center justify-center p-6">
-        <div className="max-w-2xl w-full bg-white border border-slate-200 rounded-[3rem] p-12 text-center shadow-2xl shadow-blue-100/50 space-y-10 animate-entrance">
-          <div className="relative inline-block">
-            <div className="w-32 h-32 bg-blue-50 rounded-full flex items-center justify-center mx-auto text-blue-600">
-              <Trophy size={64} />
+      <div className="min-h-screen bg-[#2e3748] flex items-center justify-center p-6">
+        <div className="max-w-xl w-full text-center space-y-12 animate-entrance">
+          <div className="space-y-4">
+            <div className="w-20 h-20 bg-blue-600 rounded-[2rem] flex items-center justify-center mx-auto text-white shadow-xl shadow-blue-500/20 mb-8">
+              <Trophy size={40} />
             </div>
-            <div className="absolute -top-2 -right-2 bg-emerald-500 text-white p-2 rounded-full shadow-lg">
-              <Sparkles size={20} />
+            <h2 className="text-4xl md:text-5xl font-black text-white tracking-tighter">Session Complete!</h2>
+            <p className="text-slate-400 font-bold uppercase tracking-[0.3em] text-[10px]">Topic: {topicId}</p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-12 py-8">
+            <div className="space-y-1">
+              <p className="text-6xl font-black text-white tracking-tighter">{score}/{questions.length}</p>
+              <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Questions Correct</p>
+            </div>
+            <div className="space-y-1 border-l border-white/10">
+              <p className="text-6xl font-black text-blue-400 tracking-tighter">{perc}%</p>
+              <p className="text-[10px] font-black text-blue-500 uppercase tracking-widest">Mastery Level</p>
             </div>
           </div>
 
-          <div className="space-y-2">
-            <h2 className="text-5xl font-black text-slate-900 tracking-tighter">Session Complete!</h2>
-            <p className="text-slate-500 font-bold uppercase tracking-widest text-xs">Topic: {topicId}</p>
-          </div>
-
-          <div className="grid grid-cols-2 gap-6">
-            <div className="p-8 bg-slate-50 rounded-3xl border border-slate-100">
-              <p className="text-5xl font-black text-slate-900">{score}/{questions.length}</p>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-2">Questions Correct</p>
-            </div>
-            <div className="p-8 bg-blue-50 rounded-3xl border border-blue-100">
-              <p className="text-5xl font-black text-blue-600">{perc}%</p>
-              <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest mt-2">Mastery Level</p>
-            </div>
-          </div>
-
-          <div className="flex flex-col sm:flex-row gap-4 pt-4">
+          <div className="flex flex-col sm:flex-row gap-4 pt-8">
             <button
               onClick={() => window.location.reload()}
-              className="flex-1 py-5 bg-white border-2 border-slate-200 text-slate-900 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-50 transition-all flex items-center justify-center gap-3"
+              className="flex-1 py-4 bg-white/5 border border-white/10 text-slate-300 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-white/10 transition-all flex items-center justify-center gap-2"
             >
-              <RotateCcw size={16} /> Retry Session
+              <RotateCcw size={14} /> Retry Session
             </button>
             <button
               onClick={() => navigate('/')}
-              className="flex-1 py-5 bg-blue-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-blue-700 shadow-xl shadow-blue-200 transition-all flex items-center justify-center gap-3"
+              className="flex-1 py-4 bg-white text-slate-900 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-blue-50 transition-all flex items-center justify-center gap-2 shadow-xl shadow-white/10"
             >
-              Back to Courses <ArrowRight size={16} />
+              Back to Courses <ArrowRight size={14} />
             </button>
           </div>
         </div>
@@ -199,175 +238,182 @@ export default function PracticePage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#fafaf9] pb-20 font-sans selection:bg-blue-100">
+    <div className="min-h-screen bg-[#2e3748] pb-20 font-sans selection:bg-indigo-500/30">
       {/* Header */}
-      <div className="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-slate-200/60 px-6 py-4">
-        <div className="max-w-5xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <button onClick={() => navigate(-1)} className="p-2 hover:bg-slate-100 rounded-xl transition-colors">
-              <ChevronLeft size={20} />
-            </button>
-            <div className="h-6 w-px bg-slate-200" />
-            <div>
-              <h1 className="text-sm font-black text-slate-900 uppercase tracking-widest">{topicId}</h1>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Practice Session</p>
+      <div className="sticky top-0 z-30 bg-[#1e293b]/40 backdrop-blur-xl border-b border-white/5 py-4">
+        <div className="max-w-[1400px] mx-0 ml-0 pl-10 pr-10 flex items-center justify-between">
+          <div className="flex items-center gap-5">
+            <div className="flex flex-col">
+              <h1 className="text-base font-black text-white uppercase tracking-[0.2em] leading-none mb-2">
+                {lessonTitle || topicId}
+              </h1>
+              <div className="flex items-center gap-2">
+                <div className="flex gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-blue-500/60 animate-pulse delay-75" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-blue-500/30 animate-pulse delay-150" />
+                </div>
+                <p className="text-[11px] font-black text-slate-400 uppercase tracking-[0.15em]">Practice Session</p>
+              </div>
             </div>
           </div>
 
           <div className="flex items-center gap-6">
-            <div className="flex flex-col items-end">
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Question {currentIndex + 1} of {questions.length}</span>
-              <div className="w-32 h-1.5 bg-slate-100 rounded-full mt-1.5 overflow-hidden border border-slate-200/50">
-                <div
-                  className="h-full bg-blue-600 transition-all duration-500"
-                  style={{ width: `${((currentIndex + 1) / questions.length) * 100}%` }}
-                />
+            <div className="flex items-center gap-4">
+              <span className="text-5xl font-black text-white tracking-tighter">
+                {String(currentIndex + 1).padStart(2, '0')}
+              </span>
+              <div className="w-px h-10 bg-white/10" />
+              <div className="flex flex-col">
+                <span className="text-[10px] font-black text-blue-300 uppercase tracking-[0.2em]">Question</span>
+                <span className="text-[11px] font-black text-slate-200 uppercase tracking-widest">
+                  OF {questions.length}
+                </span>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto px-6 pt-12">
-        <div className="space-y-8 animate-entrance">
-
-          {/* Question Type Badge */}
-          <div className="flex items-center gap-3">
-            <div className={clsx(
-              "px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-2",
-              currentQuestion.type === 'mcq' && "bg-blue-50 text-blue-600 border border-blue-100",
-              currentQuestion.type === 'output' && "bg-amber-50 text-amber-600 border border-amber-100",
-              currentQuestion.type === 'debug' && "bg-rose-50 text-rose-600 border border-rose-100",
-              currentQuestion.type === 'coding' && "bg-emerald-50 text-emerald-600 border border-emerald-100"
-            )}>
-              {currentQuestion.type === 'mcq' && <HelpCircle size={12} />}
-              {currentQuestion.type === 'output' && <Terminal size={12} />}
-              {currentQuestion.type === 'debug' && <Bug size={12} />}
-              {currentQuestion.type === 'coding' && <Code size={12} />}
-              {currentQuestion.type}
-            </div>
-            <span className="bg-slate-100 text-slate-500 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest">
-              {currentQuestion.difficulty}
-            </span>
+      <div className="max-w-[1400px] mx-0 ml-0 px-10 pt-6">
+        <div className="space-y-6 animate-entrance">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+            <h2 className="text-2xl md:text-3xl font-black text-white leading-tight tracking-tight max-w-2xl">
+              {currentQuestion.question}
+            </h2>
           </div>
 
-          {/* Question Title */}
-          <h2 className="text-3xl md:text-4xl font-black text-slate-900 leading-tight tracking-tight">
-            {currentQuestion.question}
-          </h2>
-
-          {/* Content Area */}
-          <div className="space-y-6">
+          <div className="space-y-4">
             {(currentQuestion.type === 'mcq' || currentQuestion.type === 'output') ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {currentQuestion.options.map((option, idx) => {
-                  const isSelected = selectedOption === option;
-                  const isCorrect = isSubmitted && option === currentQuestion.correctAnswer;
-                  const isWrong = isSubmitted && isSelected && option !== currentQuestion.correctAnswer;
+                {currentQuestion.options?.map((option, idx) => {
+                  const isSelected = currentAnswer.selectedOption === option;
+                  const isCorrect = currentAnswer.isSubmitted && option === currentQuestion.correctAnswer;
+                  const isWrong = currentAnswer.isSubmitted && isSelected && option !== currentQuestion.correctAnswer;
 
                   return (
                     <button
                       key={idx}
                       onClick={() => handleOptionSelect(option)}
-                      disabled={isSubmitted}
+                      disabled={currentAnswer.isSubmitted}
                       className={clsx(
-                        "p-6 rounded-[1.5rem] border-2 text-left transition-all group flex items-center justify-between",
-                        !isSubmitted && isSelected && "border-blue-600 bg-blue-50/50",
-                        !isSubmitted && !isSelected && "border-slate-200 hover:border-slate-300 bg-white",
-                        isSubmitted && isCorrect && "border-emerald-500 bg-emerald-50",
-                        isSubmitted && isWrong && "border-red-500 bg-red-50",
-                        isSubmitted && !isCorrect && !isWrong && "border-slate-200 opacity-50 bg-white"
+                        "p-5 rounded-2xl border-2 text-left transition-all duration-200 group flex items-center justify-between relative overflow-hidden",
+                        !currentAnswer.isSubmitted && isSelected && "border-white bg-white/20 border-b-2 shadow-lg",
+                        !currentAnswer.isSubmitted && !isSelected && "border-white/5 bg-white/[0.03] border-b-4 hover:border-white/20 hover:-translate-y-0.5 active:translate-y-0 active:border-b-2",
+                        currentAnswer.isSubmitted && isCorrect && "border-emerald-500 bg-emerald-600 border-b-2 shadow-none",
+                        currentAnswer.isSubmitted && isWrong && "border-rose-500 bg-rose-600 border-b-2 shadow-none",
+                        currentAnswer.isSubmitted && !isCorrect && !isWrong && "border-white/5 opacity-40 bg-transparent border-b-2"
                       )}
                     >
+                      {!currentAnswer.isSubmitted && <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/0 via-indigo-500/0 to-indigo-500/5 opacity-0 group-hover:opacity-100 transition-opacity" />}
                       <span className={clsx(
-                        "text-lg font-bold transition-colors",
-                        !isSubmitted && isSelected ? "text-blue-600" : "text-slate-700"
+                        "text-lg font-semibold transition-colors relative z-10",
+                        currentAnswer.isSubmitted && (isCorrect || isWrong) ? "text-white" : 
+                        !currentAnswer.isSubmitted && isSelected ? "text-white" : "text-white"
                       )}>
                         {option}
                       </span>
-                      {isSubmitted && isCorrect && <CheckCircle2 className="text-emerald-500" size={24} />}
-                      {isSubmitted && isWrong && <XCircle className="text-red-500" size={24} />}
+                      {currentAnswer.isSubmitted && isCorrect && <CheckCircle2 className="text-white" size={24} />}
+                      {currentAnswer.isSubmitted && isWrong && <XCircle className="text-white" size={24} />}
                     </button>
                   );
                 })}
               </div>
             ) : (
               <div className="space-y-6">
-                <div className="rounded-3xl border border-slate-200 overflow-hidden shadow-sm bg-slate-900">
-                  <div className="bg-slate-800 px-6 py-3 flex items-center justify-between border-b border-slate-700">
+                <div className="rounded-3xl border border-white/10 overflow-hidden shadow-2xl bg-slate-900">
+                  <div className="bg-slate-800 px-6 py-3 flex items-center justify-between border-b border-white/5">
                     <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Editor</span>
                     <button
                       onClick={handleRunCode}
-                      disabled={isExecuting || isSubmitted}
-                      className="bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 transition-all active:scale-95"
+                      disabled={isExecuting || currentAnswer.isSubmitted}
+                      className="bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white px-3 py-1 rounded-xl text-[9px] font-black uppercase tracking-widest flex items-center gap-2 transition-all active:scale-95"
                     >
-                      {isExecuting ? <Loader2 size={12} className="animate-spin" /> : <Play size={12} fill="currentColor" />}
+                      {isExecuting ? <Loader2 size={10} className="animate-spin" /> : <Play size={10} fill="currentColor" />}
                       Run Test
                     </button>
                   </div>
                   <textarea
-                    value={userCode}
-                    onChange={(e) => setUserCode(e.target.value)}
-                    disabled={isSubmitted}
+                    value={currentAnswer.userCode}
+                    onChange={(e) => setAnswers(prev => ({
+                      ...prev,
+                      [currentIndex]: { ...prev[currentIndex], userCode: e.target.value }
+                    }))}
+                    disabled={currentAnswer.isSubmitted}
                     spellCheck="false"
-                    className="w-full h-64 bg-slate-900 text-emerald-400 font-mono p-6 outline-none resize-none text-sm"
+                    className="w-full h-40 bg-slate-950 text-emerald-400 font-mono p-4 outline-none resize-none text-xs"
                   />
                 </div>
 
-                {executionResult && (
+                {currentAnswer.executionResult && (
                   <div className={clsx(
-                    "p-6 rounded-3xl border animate-pop-in",
-                    executionResult.success ? "bg-emerald-50 border-emerald-200" : "bg-red-50 border-red-200"
+                    "p-4 rounded-2xl border animate-pop-in",
+                    currentAnswer.executionResult.success ? "bg-emerald-50 border-emerald-200" : "bg-red-50 border-red-200"
                   )}>
                     <div className="flex items-center justify-between mb-2">
-                      <span className={clsx("text-[10px] font-black uppercase tracking-widest", executionResult.success ? "text-emerald-600" : "text-red-600")}>
-                        {executionResult.success ? "Test Passed" : "Test Failed"}
+                      <span className={clsx("text-[9px] font-black uppercase tracking-widest", currentAnswer.executionResult.success ? "text-emerald-600" : "text-red-600")}>
+                        {currentAnswer.executionResult.success ? "Test Passed" : "Test Failed"}
                       </span>
                     </div>
-                    <pre className="text-xs font-mono text-slate-700">{executionResult.output}</pre>
+                    <pre className="text-xs font-mono text-slate-700">{currentAnswer.executionResult.output}</pre>
                   </div>
                 )}
               </div>
             )}
           </div>
 
-          {/* Explanation Section */}
-          {isSubmitted && (
-            <div className="bg-white border border-slate-200 rounded-[2rem] p-8 space-y-4 shadow-lg shadow-slate-100 animate-pop-in">
+          {currentAnswer.isSubmitted && (
+            <div className="bg-white/5 border border-white/10 rounded-2xl p-5 space-y-3 animate-slide-up-smooth mt-20">
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-blue-50 rounded-full flex items-center justify-center text-blue-600">
-                  <Sparkles size={16} />
+                <div className="w-8 h-8 bg-blue-500/20 rounded-full flex items-center justify-center text-blue-300">
+                  <Sparkles size={14} />
                 </div>
-                <h4 className="text-sm font-black text-slate-900 uppercase tracking-widest">Explanation</h4>
+                <h4 className="text-xs font-black text-white uppercase tracking-widest">Explanation</h4>
               </div>
-              <p className="text-slate-600 leading-relaxed font-medium">
+              <p className="text-slate-100 leading-relaxed font-medium text-sm">
                 {currentQuestion.explanation}
               </p>
             </div>
           )}
 
-          {/* Action Footer */}
-          <div className="pt-8 flex justify-end">
-            {!isSubmitted ? (
+          <div className="pt-4 flex justify-end items-center gap-4">
+            {!currentAnswer.isSubmitted && (
               <button
                 onClick={handleSubmit}
-                disabled={(!selectedOption && (currentQuestion.type === 'mcq' || currentQuestion.type === 'output'))}
-                className="bg-slate-900 text-white px-10 py-5 rounded-2xl font-black text-xs uppercase tracking-[0.2em] hover:bg-black disabled:opacity-30 transition-all active:scale-95 shadow-xl shadow-slate-200"
+                disabled={(!currentAnswer.selectedOption && (currentQuestion.type === 'mcq' || currentQuestion.type === 'output'))}
+                className={clsx(
+                  "relative group px-8 py-4 rounded-2xl font-black text-[9px] uppercase tracking-[0.2em] transition-all active:scale-95 overflow-hidden",
+                  (!currentAnswer.selectedOption && (currentQuestion.type === 'mcq' || currentQuestion.type === 'output'))
+                    ? "bg-white/5 text-slate-600 cursor-not-allowed"
+                    : "bg-white text-slate-900 hover:shadow-[0_0_30px_rgba(255,255,255,0.2)]"
+                )}
               >
                 Submit Answer
               </button>
-            ) : (
-              <button
-                onClick={handleNext}
-                className="bg-blue-600 text-white px-10 py-5 rounded-2xl font-black text-xs uppercase tracking-[0.2em] hover:bg-blue-700 transition-all active:scale-95 shadow-xl shadow-blue-200 flex items-center gap-3"
-              >
-                {currentIndex === questions.length - 1 ? 'See Results' : 'Next Question'}
-                <ChevronRight size={18} />
-              </button>
             )}
           </div>
-
         </div>
+      </div>
+      
+      <div className="fixed top-24 right-10 z-[100] flex items-center gap-3">
+        {currentIndex > 0 && (
+          <button
+            onClick={handleBack}
+            className="bg-white/10 text-white px-6 py-4 rounded-2xl font-black text-[11px] uppercase tracking-[0.2em] hover:bg-white/20 transition-all active:scale-95 flex items-center gap-3 border border-white/10"
+          >
+            <ChevronLeft size={18} />
+            Back
+          </button>
+        )}
+        {currentAnswer.isSubmitted && (
+          <button
+            onClick={handleNext}
+            className="bg-blue-600 text-white px-8 py-4 rounded-2xl font-black text-[11px] uppercase tracking-[0.2em] hover:bg-blue-500 shadow-2xl shadow-blue-500/20 transition-all active:scale-95 flex items-center gap-3 border-2 border-white/10"
+          >
+            {currentIndex === questions.length - 1 ? 'See Results' : 'Next Question'}
+            <ChevronRight size={18} />
+          </button>
+        )}
       </div>
     </div>
   );

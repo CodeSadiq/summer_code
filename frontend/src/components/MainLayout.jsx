@@ -9,6 +9,7 @@
 
 import React from 'react';
 import { useTeachingState } from '../contexts/TeachingContext'; // Accessing global state
+import { useLocation } from 'react-router-dom';
 import TopNav from './TopNav';
 import Sidebar from './Sidebar';
 import TeachingPanel from './TeachingPanel';
@@ -27,6 +28,8 @@ export default function MainLayout({ children }) {
     isSidebarCollapsed, 
     setIsSidebarCollapsed 
   } = useTeachingState();
+  const location = useLocation();
+  const isPracticePage = location.pathname.startsWith('/practice/');
 
   // --- MOBILE SWIPE LOGIC ---
   // These variables help detect if a user swipes their finger on a phone screen.
@@ -62,13 +65,16 @@ export default function MainLayout({ children }) {
   return (
     <div
       // Main container: takes full screen height, hides overflow to prevent double scrolling.
-      className="h-screen flex flex-col bg-slate-50 font-sans text-slate-900 overflow-hidden"
+      className={clsx(
+        "h-screen flex flex-col font-sans text-slate-900 overflow-hidden transition-colors duration-500",
+        isPracticePage ? "bg-[#1e293b] bg-[radial-gradient(circle_at_top_right,_#2e3748,_#1e293b)]" : "bg-slate-50"
+      )}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
     >
       {/* 1. Header Area */}
-      <TopNav />
+      {!isPracticePage && <TopNav />}
 
       <div className="flex flex-1 overflow-hidden relative">
         {/* 2. Sidebar Area */}
@@ -87,17 +93,18 @@ export default function MainLayout({ children }) {
 
         {/* 3. Main Content Area: This is where pages like LessonPage are displayed ({children}) */}
         <main className={clsx(
-          "flex-1 overflow-y-auto w-full transition-all duration-500 bg-slate-50",
+          "flex-1 overflow-y-auto w-full transition-all duration-500",
+          isPracticePage ? "bg-[#2e3748]" : "bg-slate-50",
           "pl-0",
           // Adjust padding based on whether the sidebar is collapsed or not.
           isSidebarCollapsed ? "md:pl-16" : "md:pl-64",
-          "md:pr-[260px]" // Permanently reserve space for the TeachingPanel
+          !isPracticePage && "md:pr-[260px]" // Reserve space for TeachingPanel only if not practice
         )}>
           {children}
         </main>
 
         {/* 4. Teaching Panel: The AI character panel on the right side. */}
-        <TeachingPanel />
+        {!isPracticePage && <TeachingPanel />}
 
         {/* Mobile FAB (Floating Action Button): 
             Only shows on lesson pages. Helps start the AI teaching on small screens. */}
