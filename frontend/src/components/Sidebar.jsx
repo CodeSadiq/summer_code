@@ -7,7 +7,7 @@
  */
 
 import React, { useEffect, useState } from 'react';
-import { NavLink, useParams, useLocation } from 'react-router-dom'; // Tools for links and URL reading
+import { NavLink, useParams, useLocation, useNavigate } from 'react-router-dom'; // Tools for links and URL reading
 import { ChevronLeft, ChevronRight, Search, ArrowLeft } from 'lucide-react';
 import clsx from 'clsx';
 import { useTeachingState } from '../contexts/TeachingContext'; // AI State for mobile toggle
@@ -20,6 +20,7 @@ export default function Sidebar({ collapsed, setCollapsed }) {
   const [topics, setTopics] = useState([]);   // All course topics (e.g., HTML, Python)
   const { slug, courseId, topicId } = useParams(); // Current lesson ID or practice course from URL
   const location = useLocation();
+  const navigate = useNavigate();
   const isPracticePage = location.pathname.startsWith('/practice/');
 
   // 1. FETCH DATA: Get the list of all lessons and courses when sidebar loads
@@ -143,16 +144,16 @@ export default function Sidebar({ collapsed, setCollapsed }) {
             "p-3 border-t",
             isPracticePage ? "border-slate-800/50 bg-[#0f172a]" : "border-slate-100 bg-white"
           )}>
-            <NavLink
-              to="/practice"
+            <button
+              onClick={() => navigate(-1)}
               className={clsx(
-                "flex items-center gap-3 px-3 py-2.5 rounded-lg text-[10px] font-black uppercase tracking-[0.2em] transition-all",
+                "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-[10px] font-black uppercase tracking-[0.2em] transition-all",
                 isPracticePage ? "text-slate-400 hover:text-white hover:bg-slate-800" : "text-slate-500 hover:bg-slate-50"
               )}
             >
               <ArrowLeft size={14} />
               {(!collapsed || isSidebarOpen) && <span>Exit Practice</span>}
-            </NavLink>
+            </button>
           </div>
         )}
       </aside>

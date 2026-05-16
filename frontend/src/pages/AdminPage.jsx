@@ -30,7 +30,6 @@ export default function AdminPage() {
 
   useEffect(() => {
     // Fetch Lessons
-    setLoading(true);
     fetch(`${API}/api/lessons`)
       .then(r => r.json())
       .then(data => {
@@ -448,6 +447,17 @@ function TopicSettingsModal({ topic, onClose, onSave }) {
               <option value="MousePointer2">Pointer (DOM)</option>
               <option value="Sparkles">Sparkles (Git/Data)</option>
             </select>
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Course Display Order</label>
+            <input
+              type="number"
+              value={data.orderIndex || 0}
+              onChange={e => setData({ ...data, orderIndex: parseInt(e.target.value) || 0 })}
+              className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-3 text-sm font-bold text-slate-800 outline-none focus:ring-2 focus:ring-blue-500/30"
+              placeholder="e.g. 1, 2, 3..."
+            />
+            <p className="text-[9px] font-bold text-slate-400 px-1 mt-1">Lower numbers appear first on the landing page.</p>
           </div>
         </div>
 

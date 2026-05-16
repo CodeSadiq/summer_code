@@ -105,7 +105,7 @@ export default function LessonPage() {
         if (Array.isArray(data)) setLessons(data);
       })
       .catch(err => console.error(err));
-  }, [slug]);
+  }, []);
 
   /**
    * TERMINOLOGY: Dependency Array [slug, setActiveLesson]
@@ -246,8 +246,8 @@ export default function LessonPage() {
     )}>
 
       {/* 1. Header: Chapter Title and Language Switcher */}
-      <header className="mb-8">
-        <div className="flex items-center justify-between mb-4">
+      <header className="mb-4">
+        <div className="flex items-center justify-between mb-2">
           <span className="text-blue-600 font-bold text-[10px] uppercase tracking-widest">
             CHAPTER {String(lesson.chapterOrder || (currentIdx + 1)).padStart(2, '0')}
           </span>
@@ -255,10 +255,15 @@ export default function LessonPage() {
           {/* Language Switcher: Toggle between English and Hinglish */}
           <button
             onClick={() => setIsEnglish(!isEnglish)}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest bg-white border-2 border-slate-200"
+            className={clsx(
+              "flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 border-2",
+              isEnglish
+                ? "bg-blue-50 border-blue-200 text-blue-600"
+                : "bg-emerald-50 border-emerald-200 text-emerald-600"
+            )}
           >
-            <Sparkles size={14} />
-            {isEnglish ? "Hinglish Mode" : "English Mode"}
+            <Sparkles size={12} className={isEnglish ? "text-blue-400" : "text-emerald-400"} />
+            {isEnglish ? "English Mode" : "Hinglish Mode"}
           </button>
         </div>
 
@@ -277,7 +282,7 @@ export default function LessonPage() {
       </header>
 
       {/* 2. Content Blocks: Text Paragraphs and Code Blocks */}
-      <div className="space-y-8">
+      <div className="space-y-4">
         {lesson.blocks.slice(1).map((block, idx) => {
           const actualStep = idx + 1; // Correct index for teaching state
           const isCurrentBlock = isActive && currentStep === actualStep;
@@ -288,7 +293,7 @@ export default function LessonPage() {
               <div key={block.id} onClick={() => isActive && jumpToStep(actualStep)}>
                 <TeachingHighlighter stepIndex={actualStep} hasCodeBlock={true}>
                   <CodeBlock
-                    visibleText={block.visibleText}
+                    visibleText={(isEnglish && block.englishText) ? block.englishText : block.visibleText}
                     language={block.language || 'html'}
                     stepIndex={actualStep}
                   />
@@ -317,7 +322,7 @@ export default function LessonPage() {
       </div>
 
       {/* 3. Practice CTA: Shown at the end of the lesson */}
-      <div className="mt-24 p-8 bg-emerald-50 rounded-3xl flex items-center justify-between">
+      <div className="mt-24 p-8 bg-emerald-50 border border-emerald-200 rounded-3xl flex items-center justify-between">
         <div className="flex items-center gap-5">
           <Zap className="text-emerald-500" size={32} />
           <div>
@@ -325,7 +330,7 @@ export default function LessonPage() {
             <p className="text-[10px] text-slate-500 uppercase tracking-widest">Test what you just learned</p>
           </div>
         </div>
-        <Link to={`/practice/${lesson.course}/${lesson.topic}`} className="bg-emerald-500 text-white px-8 py-3 rounded-2xl font-black uppercase text-[10px]">
+        <Link to={`/practice/${lesson.course}/${lesson.slug}`} className="bg-emerald-500 text-white px-8 py-3 rounded-2xl font-black uppercase text-[10px]">
           Start Exercise
         </Link>
       </div>
@@ -333,13 +338,13 @@ export default function LessonPage() {
       {/* 4. Navigation Footer: Prev/Next Lesson links */}
       <footer className="mt-20 pt-8 border-t flex justify-between">
         {prevLesson && (
-          <Link to={`/lessons/${prevLesson.slug}`} className="flex items-center gap-3 text-slate-500 hover:text-slate-900 transition-colors">
+          <Link to={`/lessons/${prevLesson.slug}`} className="flex items-center gap-3 text-slate-800 font-bold hover:text-blue-600 transition-colors">
             <ArrowLeft size={16} /> <span>{prevLesson.title}</span>
           </Link>
         )}
         <div className="flex-1" />
         {nextLesson && (
-          <Link to={`/lessons/${nextLesson.slug}`} className="flex items-center gap-3 text-slate-500 hover:text-slate-900 transition-colors flex-row-reverse">
+          <Link to={`/lessons/${nextLesson.slug}`} className="flex items-center gap-3 text-slate-800 font-bold hover:text-blue-600 transition-colors flex-row-reverse">
             <ArrowRight size={16} /> <span>{nextLesson.title}</span>
           </Link>
         )}

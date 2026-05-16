@@ -6,20 +6,25 @@ import 'prismjs/components/prism-markup';
 import 'prismjs/components/prism-css';
 import 'prismjs/components/prism-clike';
 import 'prismjs/components/prism-javascript';
-import 'prismjs/themes/prism-twilight.css'; 
-import { RotateCcw, Play, Loader2 } from 'lucide-react';
+import 'prismjs/components/prism-python';
+import 'prismjs/components/prism-c';
+import 'prismjs/components/prism-cpp';
+import 'prismjs/themes/prism-twilight.css';
+import { RotateCcw, Play, Loader2, Maximize2 } from 'lucide-react';
 import { useTeachingState } from '../contexts/TeachingContext';
+import { useNavigate } from 'react-router-dom';
 import { API_URL } from '../config';
 import clsx from 'clsx';
 
 export default function CodeBlock({ visibleText, language, stepIndex, audioDuration, defaultStdin }) {
+  const navigate = useNavigate();
   const [code, setCode] = useState(visibleText || '');
   const [hasRun, setHasRun] = useState(false);
   const [isRunning, setIsRunning] = useState(false);
   const [execResult, setExecResult] = useState('');
   const [execError, setExecError] = useState(false);
   const [stdin, setStdin] = useState(defaultStdin || '');
-  
+
   // Interactive Terminal States
   const [terminalStep, setTerminalStep] = useState('READY'); // READY, PROMPTING, EXECUTING, DONE
   const [currentPrompt, setCurrentPrompt] = useState('');
@@ -100,33 +105,51 @@ export default function CodeBlock({ visibleText, language, stepIndex, audioDurat
 
   /**
    * INTERACTIVE PROMPT EXTRACTION
-   * Scans the code for strings inside printf/cout/input() 
-   * that appear before an input command.
+   * Scans the code for all strings inside printf/cout/input() 
+   * that appear before input commands.
    */
-  const detectPrompt = (sourceCode, lang) => {
+  const detectPrompts = (sourceCode, lang) => {
     const l = (lang || '').toLowerCase();
-    let prompt = null;
+    const prompts = [];
 
     if (l === 'c' || l === 'cpp') {
-      const inputMatch = sourceCode.search(/(scanf|cin|gets|fgets)/);
-      if (inputMatch !== -1) {
-        const preInput = sourceCode.substring(0, inputMatch);
-        const match = preInput.match(/"([^"]*)"/);
-        if (match) prompt = match[1];
+      // Regex to find printf followed by scanf/cin etc.
+      // This is a heuristic for the pseudo-terminal
+      const regex = /printf\s*\(\s*"([^"]*)"\s*\);?\s*(?:scanf|gets|fgets|cin)/g;
+      let match;
+      while ((match = regex.exec(sourceCode)) !== null) {
+        prompts.push(match[1]);
+      }
+      
+      // Fallback: if no printf+scanf pairs found, check for single scanf
+      if (prompts.length === 0) {
+        if (sourceCode.search(/(scanf|cin|gets|fgets)/) !== -1) {
+          const firstPromptMatch = sourceCode.match(/"([^"]*)"/);
+          if (firstPromptMatch) prompts.push(firstPromptMatch[1]);
+        }
       }
     } else if (l === 'python') {
-      const match = sourceCode.match(/input\s*\(\s*"([^"]*)"\s*\)/);
-      if (match) prompt = match[1];
+      const regex = /input\s*\(\s*"([^"]*)"\s*\)/g;
+      let match;
+      while ((match = regex.exec(sourceCode)) !== null) {
+        prompts.push(match[1]);
+      }
     }
-    return prompt;
+    return prompts;
   };
+
+  const [allPrompts, setAllPrompts] = useState([]);
+  const [currentPromptIndex, setCurrentPromptIndex] = useState(0);
+  const [collectedInputs, setCollectedInputs] = useState([]);
 
   const handleRun = async () => {
     setHasRun(true);
     setTerminalLines([]);
     setExecError(false);
-    setCurrentInput(''); 
+    setCurrentInput('');
     setCurrentPrompt('');
+    setCollectedInputs([]);
+    setCurrentPromptIndex(0);
 
     if (isCurrentBlock && mode === 'AT_CODE_BLOCK') {
       setMode('USER_TRYING');
@@ -139,11 +162,13 @@ export default function CodeBlock({ visibleText, language, stepIndex, audioDurat
       return;
     }
 
-    const prompt = detectPrompt(code, language);
-    if (prompt) {
+    const prompts = detectPrompts(code, language);
+    if (prompts.length > 0) {
+      setAllPrompts(prompts);
+      setCurrentPromptIndex(0);
       setTerminalStep('PROMPTING');
-      setCurrentPrompt(prompt);
-      setTerminalLines([{ type: 'prompt', text: prompt }]);
+      setCurrentPrompt(prompts[0]);
+      setTerminalLines([{ type: 'prompt', text: prompts[0] }]);
       return;
     }
 
@@ -153,9 +178,21 @@ export default function CodeBlock({ visibleText, language, stepIndex, audioDurat
   const handleInputSubmit = async (e) => {
     if (e.key !== 'Enter') return;
     const val = currentInput;
+    const newCollected = [...collectedInputs, val];
+    setCollectedInputs(newCollected);
     setTerminalLines(prev => [...prev, { type: 'input', text: val }]);
-    setTerminalStep('EXECUTING');
-    await performExecution(val);
+    setCurrentInput('');
+
+    if (currentPromptIndex < allPrompts.length - 1) {
+      const nextIdx = currentPromptIndex + 1;
+      setCurrentPromptIndex(nextIdx);
+      setCurrentPrompt(allPrompts[nextIdx]);
+      setTerminalLines(prev => [...prev, { type: 'prompt', text: allPrompts[nextIdx] }]);
+    } else {
+      setTerminalStep('EXECUTING');
+      // Combine all inputs with newlines for the backend
+      await performExecution(newCollected.join('\n'));
+    }
   };
 
   const performExecution = async (inputVal) => {
@@ -168,16 +205,21 @@ export default function CodeBlock({ visibleText, language, stepIndex, audioDurat
         body: JSON.stringify({ code, language, stdin: inputVal })
       });
       const data = await res.json();
-      
-      const rawOutput = data.output || 'No output generated.';
+
+      const rawOutput = data.output || (data.error ? 'Execution failed.' : 'No output generated.');
       let cleanOutput = rawOutput;
-      if (currentPrompt && rawOutput.startsWith(currentPrompt)) {
-        cleanOutput = rawOutput.substring(currentPrompt.length).trim();
-      }
+      
+      // Remove all prompts from the output to avoid double-printing
+      // since our terminal already printed them during the interactive phase.
+      allPrompts.forEach(p => {
+        if (cleanOutput.startsWith(p)) {
+          cleanOutput = cleanOutput.substring(p.length).trimStart();
+        }
+      });
 
       const lines = cleanOutput.split('\n');
       for (const line of lines) {
-         setTerminalLines(prev => [...prev, { type: 'output', text: line }]);
+        setTerminalLines(prev => [...prev, { type: 'output', text: line }]);
       }
       setExecError(data.error || !res.ok);
     } catch (err) {
@@ -217,9 +259,20 @@ export default function CodeBlock({ visibleText, language, stepIndex, audioDurat
             <div className="w-3 h-3 rounded-full bg-[#27c93f]"></div>
           </div>
           <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">EDITOR.{language}</span>
-          <button onClick={handleReset} title="Reset Code" className="text-slate-500 hover:text-white transition-colors">
-            <RotateCcw size={14} />
-          </button>
+          <div className="flex items-center gap-3">
+            {stepIndex !== -1 && (
+              <button 
+                onClick={() => navigate('/playground', { state: { code, language } })} 
+                title="Open in Playground" 
+                className="text-slate-500 hover:text-white transition-colors"
+              >
+                <Maximize2 size={14} />
+              </button>
+            )}
+            <button onClick={handleReset} title="Reset Code" className="text-slate-500 hover:text-white transition-colors">
+              <RotateCcw size={14} />
+            </button>
+          </div>
         </div>
         <div className="flex-1 overflow-auto p-6 text-sm font-mono relative group text-blue-300 min-h-[300px]">
           {isReadOnly && <div className="absolute inset-0 z-10 cursor-not-allowed"></div>}
@@ -259,9 +312,9 @@ export default function CodeBlock({ visibleText, language, stepIndex, audioDurat
             <Play size={12} fill="currentColor" /> RUN CODE
           </button>
         </div>
-        
-        <div 
-          ref={terminalRef} 
+
+        <div
+          ref={terminalRef}
           onClick={handleTerminalClick}
           className={clsx(
             "flex-1 p-6 relative bg-white overflow-auto",
@@ -273,22 +326,64 @@ export default function CodeBlock({ visibleText, language, stepIndex, audioDurat
               Waiting for execution...
             </div>
           ) : isBrowserLang ? (
-             <iframe
-               srcDoc={`<html><body style="margin:0;padding:0;color:#0f172a;font-family:monospace;background:white;">
-                 <div id="root"></div><script>try{${language === 'javascript' ? code : `document.getElementById('root').innerHTML = \`${code}\``}}catch(e){document.body.innerHTML='<span style="color:#ef4444">'+e.message+'</span>'}</script>
-               </body></html>`}
-               title="preview" className="w-full h-full border-0"
-             />
+            <iframe
+              srcDoc={`<!DOCTYPE html>
+              <html>
+                <head>
+                  <style>
+                    body { margin: 0; padding: 16px; color: #0f172a; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; background: white; font-size: 13px; line-height: 1.5; }
+                    #root { display: flex; flex-direction: column; gap: 4px; }
+                    .log-entry { padding: 4px 0; border-bottom: 1px solid #f1f5f9; white-space: pre-wrap; word-break: break-all; }
+                    .log-error { color: #ef4444; font-weight: bold; }
+                  </style>
+                </head>
+                <body>
+                  <div id="root"></div>
+                  <script>
+                    (function() {
+                      const root = document.getElementById('root');
+                      const originalLog = console.log;
+                      console.log = (...args) => {
+                        const div = document.createElement('div');
+                        div.className = 'log-entry';
+                        div.innerText = args.map(a => 
+                          typeof a === 'object' ? JSON.stringify(a) : String(a)
+                        ).join(' ');
+                        root.appendChild(div);
+                        originalLog.apply(console, args);
+                      };
+                      window.onerror = (msg, url, line, col, error) => {
+                        const div = document.createElement('div');
+                        div.className = 'log-entry log-error';
+                        div.innerText = 'Error: ' + msg + (line ? ' (line ' + line + ')' : '');
+                        root.appendChild(div);
+                      };
+                    })();
+                  </script>
+                  ${language === 'html' 
+                    ? code 
+                    : `<script type="text/javascript">
+                        try {
+                          ${code.replace(/<\/script>/gi, '<\\/script>')}
+                        } catch(e) {
+                          console.log('Runtime Error: ' + e.message);
+                        }
+                      </script>`
+                  }
+                </body>
+              </html>`}
+              title="preview" className="w-full h-full border-0"
+            />
           ) : (
             <div className="font-mono text-sm leading-relaxed whitespace-pre-wrap">
               {terminalLines.map((line, i) => {
                 const isLatestPrompt = i === terminalLines.length - 1 && line.type === 'prompt' && terminalStep === 'PROMPTING';
-                
+
                 return (
                   <span key={i} className={clsx(
                     line.type === 'prompt' ? "text-slate-800" :
-                    line.type === 'input' ? "text-blue-600 font-bold ml-1" :
-                    line.type === 'error' ? "text-red-600 block" : "text-slate-800 block"
+                      line.type === 'input' ? "text-blue-600 font-bold ml-1" :
+                        line.type === 'error' ? "text-red-600 block" : "text-slate-800 block"
                   )}>
                     {line.text}
                     {isLatestPrompt && (

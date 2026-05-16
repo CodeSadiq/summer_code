@@ -12,6 +12,7 @@
   "//3": "The 'ingredients' (libraries) your server needs to function.",
   "dependencies": {
     "@elevenlabs/elevenlabs-js": "^2.45.0",
+    "compression": "^1.8.1",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",

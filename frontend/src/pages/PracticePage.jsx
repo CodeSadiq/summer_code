@@ -7,10 +7,12 @@ import {
 } from 'lucide-react';
 import { API_URL } from '../config';
 import clsx from 'clsx';
+import { useTeachingState } from '../contexts/TeachingContext';
 import CodeBlock from '../components/CodeBlock';
 
 export default function PracticePage() {
   const { courseId, topicId } = useParams();
+  const { isEnglish, setIsEnglish } = useTeachingState();
   const navigate = useNavigate();
   const [questions, setQuestions] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -20,7 +22,12 @@ export default function PracticePage() {
   const [score, setScore] = useState(0);
   const [isExecuting, setIsExecuting] = useState(false);
   const [lessonTitle, setLessonTitle] = useState('');
-  
+
+  // AI Explanation State
+  const [isAiLoading, setIsAiLoading] = useState(false);
+  const [aiExplanation, setAiExplanation] = useState('');
+  const [showAiChat, setShowAiChat] = useState(false);
+
   const user = JSON.parse(localStorage.getItem('studentData') || '{}');
 
   useEffect(() => {
@@ -31,10 +38,16 @@ export default function PracticePage() {
   const fetchQuestions = async () => {
     try {
       setLoading(true);
-      const res = await fetch(`${API_URL}/api/practice?topicId=${topicId}&userId=${user.email}`);
+      let url = `${API_URL}/api/practice?userId=${user.email}`;
+      if (courseId === 'Course') {
+        url += `&topicId=${topicId}`;
+      } else {
+        url += `&topicId=${courseId}&lessonId=${topicId}`;
+      }
+      const res = await fetch(url);
       const data = await res.json();
       setQuestions(data);
-      
+
       // Initialize first question answer
       if (data.length > 0) {
         setAnswers({
@@ -63,6 +76,12 @@ export default function PracticePage() {
   const currentQuestion = questions[currentIndex] || {};
   const currentAnswer = answers[currentIndex] || { selectedOption: null, isSubmitted: false, userCode: currentQuestion.starterCode || '' };
 
+  const activeQuestionText = (isEnglish && currentQuestion.englishQuestion) ? currentQuestion.englishQuestion : currentQuestion.question;
+  const activeOptions = (isEnglish && currentQuestion.englishOptions) ? currentQuestion.englishOptions : currentQuestion.options;
+  const activeExplanation = (isEnglish && currentQuestion.englishExplanation) ? currentQuestion.englishExplanation : currentQuestion.explanation;
+
+  console.log('Language Debug:', { isEnglish, hasEnglish: !!currentQuestion.englishQuestion, activeQuestionText });
+
   const handleOptionSelect = (option) => {
     if (currentAnswer.isSubmitted) return;
     setAnswers(prev => ({
@@ -76,28 +95,67 @@ export default function PracticePage() {
 
     let isCorrect = false;
     if (currentQuestion.type === 'mcq' || currentQuestion.type === 'output') {
-      isCorrect = currentAnswer.selectedOption === currentQuestion.correctAnswer;
+      const selectedIndex = activeOptions.indexOf(currentAnswer.selectedOption);
+      const correctIndex = currentQuestion.options.indexOf(currentQuestion.correctAnswer);
+      isCorrect = selectedIndex === correctIndex;
     } else if (currentQuestion.type === 'debug' || currentQuestion.type === 'coding') {
       isCorrect = currentAnswer.executionResult?.success;
     }
 
     if (isCorrect) setScore(prev => prev + 1);
-    
+
     setAnswers(prev => ({
       ...prev,
-      [currentIndex]: { 
-        ...prev[currentIndex], 
-        isSubmitted: true, 
-        isCorrect, 
-        isWrong: !isCorrect 
+      [currentIndex]: {
+        ...prev[currentIndex],
+        isSubmitted: true,
+        isCorrect,
+        isWrong: !isCorrect
       }
     }));
+  };
+
+
+  const handleAiExplain = async () => {
+    setIsAiLoading(true);
+    setShowAiChat(true);
+    setAiExplanation('');
+
+    try {
+      const res = await fetch(`${API_URL}/api/ai/explain`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          question: activeQuestionText,
+          options: activeOptions,
+          selectedOption: currentAnswer.selectedOption,
+          correctAnswer: currentQuestion.correctAnswer,
+          userCode: currentAnswer.userCode,
+          type: currentQuestion.type,
+          language: isEnglish ? 'English' : 'Hinglish'
+        })
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        setAiExplanation(data.explanation);
+      } else {
+        setAiExplanation("Sorry, I couldn't generate an explanation right now.");
+      }
+    } catch (err) {
+      console.error(err);
+      setAiExplanation("Error connecting to AI Tutor.");
+    } finally {
+      setIsAiLoading(false);
+    }
   };
 
   const handleNext = () => {
     if (currentIndex < questions.length - 1) {
       const nextIndex = currentIndex + 1;
       setCurrentIndex(nextIndex);
+      setChatHistory([]); // Reset chat for new question
+      setShowAiChat(false);
       if (!answers[nextIndex]) {
         setAnswers(prev => ({
           ...prev,
@@ -146,11 +204,11 @@ export default function PracticePage() {
       });
       const data = await res.json();
       const success = data.output?.trim() === currentQuestion.correctAnswer?.trim();
-      
+
       setAnswers(prev => ({
         ...prev,
-        [currentIndex]: { 
-          ...prev[currentIndex], 
+        [currentIndex]: {
+          ...prev[currentIndex],
           executionResult: { output: data.output, success, error: data.error },
           isCorrect: success,
           isWrong: !success
@@ -226,10 +284,10 @@ export default function PracticePage() {
               <RotateCcw size={14} /> Retry Session
             </button>
             <button
-              onClick={() => navigate('/')}
+              onClick={() => navigate('/practice')}
               className="flex-1 py-4 bg-white text-slate-900 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-blue-50 transition-all flex items-center justify-center gap-2 shadow-xl shadow-white/10"
             >
-              Back to Courses <ArrowRight size={14} />
+              Back to Practice Hub <ArrowRight size={14} />
             </button>
           </div>
         </div>
@@ -259,6 +317,14 @@ export default function PracticePage() {
           </div>
 
           <div className="flex items-center gap-6">
+            <button
+              onClick={() => setIsEnglish(!isEnglish)}
+              className="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 border border-white/5 transition-all active:scale-95"
+            >
+              <Sparkles size={12} className={clsx(isEnglish ? "text-blue-400" : "text-emerald-400")} />
+              {isEnglish ? "English Mode" : "Hinglish Mode"}
+            </button>
+            <div className="w-px h-8 bg-white/5" />
             <div className="flex items-center gap-4">
               <span className="text-5xl font-black text-white tracking-tighter">
                 {String(currentIndex + 1).padStart(2, '0')}
@@ -279,17 +345,18 @@ export default function PracticePage() {
         <div className="space-y-6 animate-entrance">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
             <h2 className="text-2xl md:text-3xl font-black text-white leading-tight tracking-tight max-w-2xl">
-              {currentQuestion.question}
+              {activeQuestionText}
             </h2>
           </div>
 
           <div className="space-y-4">
             {(currentQuestion.type === 'mcq' || currentQuestion.type === 'output') ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {currentQuestion.options?.map((option, idx) => {
+                {activeOptions?.map((option, idx) => {
                   const isSelected = currentAnswer.selectedOption === option;
-                  const isCorrect = currentAnswer.isSubmitted && option === currentQuestion.correctAnswer;
-                  const isWrong = currentAnswer.isSubmitted && isSelected && option !== currentQuestion.correctAnswer;
+                  const correctIndex = currentQuestion.options.indexOf(currentQuestion.correctAnswer);
+                  const isCorrect = currentAnswer.isSubmitted && idx === correctIndex;
+                  const isWrong = currentAnswer.isSubmitted && isSelected && idx !== correctIndex;
 
                   return (
                     <button
@@ -308,10 +375,10 @@ export default function PracticePage() {
                       {!currentAnswer.isSubmitted && <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/0 via-indigo-500/0 to-indigo-500/5 opacity-0 group-hover:opacity-100 transition-opacity" />}
                       <span className={clsx(
                         "text-lg font-semibold transition-colors relative z-10",
-                        currentAnswer.isSubmitted && (isCorrect || isWrong) ? "text-white" : 
-                        !currentAnswer.isSubmitted && isSelected ? "text-white" : "text-white"
+                        currentAnswer.isSubmitted && (isCorrect || isWrong) ? "text-white" :
+                          !currentAnswer.isSubmitted && isSelected ? "text-white" : "text-white"
                       )}>
-                        {option}
+                        {activeOptions[idx]}
                       </span>
                       {currentAnswer.isSubmitted && isCorrect && <CheckCircle2 className="text-white" size={24} />}
                       {currentAnswer.isSubmitted && isWrong && <XCircle className="text-white" size={24} />}
@@ -363,16 +430,41 @@ export default function PracticePage() {
           </div>
 
           {currentAnswer.isSubmitted && (
-            <div className="bg-white/5 border border-white/10 rounded-2xl p-5 space-y-3 animate-slide-up-smooth mt-20">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-blue-500/20 rounded-full flex items-center justify-center text-blue-300">
-                  <Sparkles size={14} />
+            <div className="flex flex-col gap-6 mt-10">
+              {!showAiChat ? (
+                <button
+                  onClick={() => handleAiExplain()}
+                  className="w-fit px-6 py-3 bg-indigo-600/10 border border-indigo-500/20 text-indigo-300 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-indigo-600/20 transition-all flex items-center justify-center gap-2 group"
+                >
+                  <Sparkles size={14} className="group-hover:animate-pulse" /> ? Explanation
+                </button>
+              ) : (
+                <div className="bg-[#1e293b]/90 border border-white/5 rounded-[2rem] overflow-hidden flex flex-col shadow-2xl animate-slide-up-smooth backdrop-blur-xl">
+                  {/* Header */}
+                  <div className="px-6 py-4 bg-indigo-600/20 border-b border-white/5 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 bg-indigo-500/30 rounded-full flex items-center justify-center">
+                        <Sparkles size={10} className="text-indigo-300" />
+                      </div>
+                      <span className="text-[9px] font-black text-indigo-200 uppercase tracking-widest">AI Explanation</span>
+                    </div>
+                    <button onClick={() => setShowAiChat(false)} className="text-slate-500 hover:text-white transition-colors">
+                      <XCircle size={18} />
+                    </button>
+                  </div>
+
+                  {/* Content */}
+                  <div className="p-6 text-slate-200 text-sm leading-relaxed whitespace-pre-wrap">
+                    {isAiLoading ? (
+                      <div className="flex items-center gap-2 text-indigo-400 text-[9px] font-black uppercase tracking-widest animate-pulse">
+                        <Loader2 size={10} className="animate-spin" /> Thinking...
+                      </div>
+                    ) : (
+                      aiExplanation
+                    )}
+                  </div>
                 </div>
-                <h4 className="text-xs font-black text-white uppercase tracking-widest">Explanation</h4>
-              </div>
-              <p className="text-slate-100 leading-relaxed font-medium text-sm">
-                {currentQuestion.explanation}
-              </p>
+              )}
             </div>
           )}
 
@@ -394,7 +486,7 @@ export default function PracticePage() {
           </div>
         </div>
       </div>
-      
+
       <div className="fixed top-24 right-10 z-[100] flex items-center gap-3">
         {currentIndex > 0 && (
           <button

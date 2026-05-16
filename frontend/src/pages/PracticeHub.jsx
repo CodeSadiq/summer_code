@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { HelpCircle, ChevronRight, Sparkles, BookOpen } from 'lucide-react';
+import { HelpCircle, ChevronRight, Sparkles, BookOpen, Terminal } from 'lucide-react';
 import { API_URL } from '../config';
 import clsx from 'clsx';
 
@@ -37,6 +37,7 @@ export default function PracticeHub() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Main Topics */}
           {topics.map(topic => (
             <Link 
               key={topic.id}
@@ -49,7 +50,7 @@ export default function PracticeHub() {
                 </div>
                 <div>
                   <h3 className="text-2xl font-black text-white tracking-tight">{topic.name}</h3>
-                  <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">{topic.subtitle}</p>
+                  <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">{topic.subtitle || 'Practice Mode'}</p>
                 </div>
               </div>
               <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center text-slate-400 group-hover:bg-blue-600 group-hover:text-white transition-all -translate-x-4 opacity-0 group-hover:translate-x-0 group-hover:opacity-100">
@@ -57,6 +58,26 @@ export default function PracticeHub() {
               </div>
             </Link>
           ))}
+
+          {/* Quick Playground Access */}
+          <Link 
+            to="/playground"
+            className="group relative bg-gradient-to-br from-indigo-600 to-violet-700 rounded-[2.5rem] p-8 flex items-center justify-between hover:scale-[1.02] transition-all shadow-2xl shadow-indigo-500/20 md:col-span-2 mt-4 overflow-hidden"
+          >
+            <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10" />
+            <div className="flex items-center gap-6 relative z-10">
+              <div className="w-20 h-20 bg-white/10 text-white rounded-3xl flex items-center justify-center backdrop-blur-md border border-white/20 group-hover:scale-110 transition-transform">
+                 <Terminal size={40} />
+              </div>
+              <div>
+                <h3 className="text-3xl font-black text-white tracking-tighter">Coding Playground</h3>
+                <p className="text-indigo-100 text-sm font-bold uppercase tracking-[0.2em] opacity-80">Full-Screen IDE • Run Any Language</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 bg-white/10 px-6 py-3 rounded-2xl border border-white/20 text-white text-xs font-black uppercase tracking-widest backdrop-blur-md group-hover:bg-white group-hover:text-indigo-600 transition-all relative z-10">
+              Launch IDE <ChevronRight size={16} />
+            </div>
+          </Link>
         </div>
       </div>
     </div>

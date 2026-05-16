@@ -20,6 +20,7 @@ import ProfilePage from './pages/ProfilePage';
 import PracticePage from './pages/PracticePage';
 import AdminPractice from './pages/AdminPractice';
 import PracticeHub from './pages/PracticeHub';
+import PlaygroundPage from './pages/PlaygroundPage';
 import PublicLayout from './components/PublicLayout'; // Layout without sidebar
 
 /**
@@ -49,6 +50,7 @@ function App() {
 
           {/* Learning Content: Uses MainLayout (likely has a sidebar) */}
           <Route path="/lessons/:slug" element={<MainLayout><LessonPage /></MainLayout>} />
+          <Route path="/playground" element={<PlaygroundPage />} />
           <Route path="/practice" element={<PublicLayout><PracticeHub /></PublicLayout>} />
           <Route path="/practice/:courseId/:topicId" element={<MainLayout><PracticePage /></MainLayout>} />
 

@@ -52,9 +52,7 @@ export default function AvailableCoursesPage() {
           {topics.map((course) => {
             const firstSlug = getFirstLessonSlug(course.name);
             const isActive = course.status === 'Active' && firstSlug;
-            const description = course.name === 'HTML' 
-              ? "Web ki basic foundation aur architecture seekhein hamare interactive mode ke saath." 
-              : (course.description || `Master the essentials of ${course.name} from scratch with hands-on practice.`);
+            const description = course.description || `Master the essentials of ${course.name} from scratch with hands-on practice.`;
             
             return (
               <div key={course.id || course.name} className={`h-full ${!isActive ? 'opacity-75' : ''}`}>
@@ -69,7 +67,18 @@ export default function AvailableCoursesPage() {
                   <div className="relative z-10 flex flex-col h-full">
                     <div className="flex items-start justify-between mb-10">
                       <div className={`w-16 h-16 rounded-2xl flex items-center justify-center shadow-sm border border-slate-100 transition-all duration-300 ${isActive ? 'bg-white group-hover:bg-slate-900 group-hover:text-white group-hover:scale-110' : 'bg-slate-100 text-slate-400'}`}>
-                        <Layers size={28} />
+                        {(() => {
+                          const iconMap = {
+                            'Code2': <Code2 size={28} />,
+                            'Layers': <Layers size={28} />,
+                            'Cpu': <Code2 size={28} />, // Fallback for JS
+                            'MousePointer2': <Code2 size={28} />,
+                            'Sparkles': <Code2 size={28} />,
+                            'layout': <Layers size={28} />,
+                            'code': <Code2 size={28} />
+                          };
+                          return iconMap[course.icon] || <Code2 size={28} />;
+                        })()}
                       </div>
                       
                       {isActive ? (

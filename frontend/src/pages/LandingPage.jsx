@@ -143,11 +143,9 @@ export default function LandingPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
             {topics.slice(0, 5).map((course) => {
+              const description = course.description || `Master the essentials of ${course.name} from scratch with hands-on practice.`;
               const slug = getFirstLessonSlug(course.name);
               const isActive = course.status === 'Active' && slug;
-              const description = course.name === 'HTML'
-                ? "Web ki basic foundation aur architecture seekhein hamare interactive mode ke saath."
-                : (course.description || `Master the essentials of ${course.name} from scratch with hands-on practice.`);
 
               return (
                 <div key={course.id || course.name} className={clsx("h-full", !isActive && "opacity-75")}>
@@ -168,7 +166,18 @@ export default function LandingPage() {
                           "w-16 h-16 rounded-2xl flex items-center justify-center shadow-sm border border-slate-100 transition-all duration-300",
                           isActive ? "bg-white group-hover:bg-[#282a36] group-hover:text-white group-hover:scale-110" : "bg-slate-100 text-slate-400"
                         )}>
-                          <Layers size={28} />
+                          {(() => {
+                            const iconMap = {
+                              'Code2': <Code2 size={28} />,
+                              'Layers': <Layers size={28} />,
+                              'Cpu': <Cpu size={28} />,
+                              'MousePointer2': <MousePointer2 size={28} />,
+                              'Sparkles': <Sparkles size={28} />,
+                              'layout': <Layers size={28} />, // fallback for old data
+                              'code': <Cpu size={28} /> // fallback for old data
+                            };
+                            return iconMap[course.icon] || <Code2 size={28} />;
+                          })()}
                         </div>
 
                         {isActive ? (

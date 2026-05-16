@@ -19,12 +19,16 @@ export default function AdminPractice() {
     lessonId: '',
     type: 'mcq',
     question: '',
+    englishQuestion: '',
     options: ['', '', '', ''],
+    englishOptions: ['', '', '', ''],
     correctAnswer: '',
     explanation: '',
+    englishExplanation: '',
     difficulty: 'easy',
     starterCode: '',
-    testCases: [{ input: '', expectedOutput: '' }]
+    testCases: [{ input: '', expectedOutput: '' }],
+    medium: 'both' // New field: 'hinglish', 'english', 'both'
   });
 
   const selectedTopic = topicId || '';
@@ -56,12 +60,16 @@ export default function AdminPractice() {
       lessonId: '',
       type: 'mcq',
       question: '',
+      englishQuestion: '',
       options: ['', '', '', ''],
+      englishOptions: ['', '', '', ''],
       correctAnswer: '',
       explanation: '',
+      englishExplanation: '',
       difficulty: 'easy',
       starterCode: '',
-      testCases: [{ input: '', expectedOutput: '' }]
+      testCases: [{ input: '', expectedOutput: '' }],
+      medium: 'both'
     });
   };
 
@@ -222,12 +230,15 @@ export default function AdminPractice() {
                       {q.type === 'debug' && <Bug size={24} />}
                       {q.type === 'coding' && <Code size={24} />}
                     </div>
-                    <div className="space-y-1">
+                    <div className="space-y-2 flex-1 min-w-0">
                       <div className="flex items-center gap-3">
-                        <h3 className="text-lg font-black text-slate-900 truncate max-w-md">{q.question}</h3>
+                        <h3 className="text-lg font-black text-slate-900 truncate">{q.question}</h3>
                         <span className="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 bg-slate-100 text-slate-500 rounded-full">{q.difficulty}</span>
                       </div>
-                      <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">{q.topicId} • {q.type}</p>
+                      {q.englishQuestion && (
+                        <p className="text-sm font-medium text-slate-500 italic border-l-2 border-slate-200 pl-3">{q.englishQuestion}</p>
+                      )}
+                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest pt-1">{q.topicId} • {q.type} • {q.medium || 'both'}</p>
                     </div>
                   </div>
 
@@ -297,37 +308,97 @@ export default function AdminPractice() {
                     <option value="coding">Coding Challenge</option>
                   </select>
                 </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2">Question Medium</label>
+                  <div className="flex bg-slate-50 p-1 rounded-2xl border border-slate-200">
+                    {['hinglish', 'english', 'both'].map(m => (
+                      <button
+                        key={m}
+                        type="button"
+                        onClick={() => setFormData({ ...formData, medium: m })}
+                        className={clsx(
+                          "flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
+                          formData.medium === m ? "bg-white text-slate-900 shadow-sm" : "text-slate-400 hover:text-slate-600"
+                        )}
+                      >
+                        {m}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
 
-              <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2">Question Description</label>
-                <textarea
-                  required
-                  placeholder="Describe the problem or question clearly..."
-                  value={formData.question}
-                  onChange={(e) => setFormData({ ...formData, question: e.target.value })}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 font-bold outline-none focus:ring-2 focus:ring-blue-500 h-32 resize-none transition-all"
-                />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {(formData.medium === 'hinglish' || formData.medium === 'both') && (
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2">Question Description (Hinglish)</label>
+                    <textarea
+                      required
+                      placeholder="Describe the problem in Hinglish..."
+                      value={formData.question}
+                      onChange={(e) => setFormData({ ...formData, question: e.target.value })}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 font-bold outline-none focus:ring-2 focus:ring-blue-500 h-32 resize-none transition-all"
+                    />
+                  </div>
+                )}
+                {(formData.medium === 'english' || formData.medium === 'both') && (
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2">Question Description (English)</label>
+                    <textarea
+                      required={formData.medium === 'english'}
+                      placeholder="Describe the problem in English..."
+                      value={formData.englishQuestion}
+                      onChange={(e) => setFormData({ ...formData, englishQuestion: e.target.value })}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 font-bold outline-none focus:ring-2 focus:ring-blue-500 h-32 resize-none transition-all"
+                    />
+                  </div>
+                )}
               </div>
 
               {(formData.type === 'mcq' || formData.type === 'output') && (
-                <div className="space-y-4">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2">Options</label>
-                  <div className="grid grid-cols-2 gap-4">
-                    {formData.options.map((opt, i) => (
-                      <input
-                        key={i}
-                        placeholder={`Option ${i + 1}`}
-                        value={opt}
-                        onChange={(e) => {
-                          const newOpts = [...formData.options];
-                          newOpts[i] = e.target.value;
-                          setFormData({ ...formData, options: newOpts });
-                        }}
-                        className="bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 font-bold outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    ))}
-                  </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  {(formData.medium === 'hinglish' || formData.medium === 'both') && (
+                    <div className="space-y-4">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2">Options (Hinglish)</label>
+                      <div className="grid grid-cols-1 gap-4">
+                        {formData.options.map((opt, i) => (
+                          <input
+                            key={i}
+                            required
+                            placeholder={`Option ${i + 1}`}
+                            value={opt}
+                            onChange={(e) => {
+                              const newOpts = [...formData.options];
+                              newOpts[i] = e.target.value;
+                              setFormData({ ...formData, options: newOpts });
+                            }}
+                            className="bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 font-bold outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {(formData.medium === 'english' || formData.medium === 'both') && (
+                    <div className="space-y-4">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2">Options (English)</label>
+                      <div className="grid grid-cols-1 gap-4">
+                        {(formData.englishOptions || ['', '', '', '']).map((opt, i) => (
+                          <input
+                            key={i}
+                            required={formData.medium === 'english' || formData.medium === 'both'}
+                            placeholder={`English Option ${i + 1}`}
+                            value={opt}
+                            onChange={(e) => {
+                              const newOpts = [...(formData.englishOptions || ['', '', '', ''])];
+                              newOpts[i] = e.target.value;
+                              setFormData({ ...formData, englishOptions: newOpts });
+                            }}
+                            className="bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 font-bold outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -429,14 +500,29 @@ export default function AdminPractice() {
                 </div>
               )}
 
-              <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2">Explanation / Hint</label>
-                <textarea
-                  value={formData.explanation}
-                  onChange={(e) => setFormData({ ...formData, explanation: e.target.value })}
-                  placeholder="Explain the solution or provide a hint for the user..."
-                  className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 font-bold outline-none focus:ring-2 focus:ring-blue-500 h-24 resize-none transition-all"
-                />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {(formData.medium === 'hinglish' || formData.medium === 'both') && (
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2">Explanation (Hinglish)</label>
+                    <textarea
+                      value={formData.explanation}
+                      onChange={(e) => setFormData({ ...formData, explanation: e.target.value })}
+                      placeholder="Explain in Hinglish..."
+                      className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 font-bold outline-none focus:ring-2 focus:ring-blue-500 h-24 resize-none transition-all"
+                    />
+                  </div>
+                )}
+                {(formData.medium === 'english' || formData.medium === 'both') && (
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2">Explanation (English)</label>
+                    <textarea
+                      value={formData.englishExplanation}
+                      onChange={(e) => setFormData({ ...formData, englishExplanation: e.target.value })}
+                      placeholder="Explain in English..."
+                      className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 font-bold outline-none focus:ring-2 focus:ring-blue-500 h-24 resize-none transition-all"
+                    />
+                  </div>
+                )}
               </div>
 
               <div className="flex gap-4 pt-4">

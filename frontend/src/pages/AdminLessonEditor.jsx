@@ -49,7 +49,7 @@ const BLOCK_STYLE = {
 };
 
 /* ─── Single block editor ─── */
-function BlockEditor({ block, idx, total, onChange, onDelete, onMove }) {
+function BlockEditor({ block, idx, total, onChange, onDelete, onMove, onGenerateTranscript, transcriptLoading }) {
   const [open, setOpen] = useState(true);
   const style = BLOCK_STYLE[block.type] || BLOCK_STYLE.heading;
 
@@ -145,6 +145,21 @@ function BlockEditor({ block, idx, total, onChange, onDelete, onMove }) {
               <div className="flex items-center gap-3">
                 <div className="w-2 h-2 rounded-full bg-indigo-500 shadow-sm shadow-indigo-200" />
                 <Label>2. Narration Script (Hinglish AI)</Label>
+                <button 
+                  onClick={() => onGenerateTranscript('Hinglish', idx)}
+                  disabled={transcriptLoading[`${block.id}-Hinglish`]}
+                  className="flex items-center gap-2 p-1.5 rounded-lg bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white transition-all group/ai disabled:opacity-50"
+                  title="Generate AI Transcript"
+                >
+                  {transcriptLoading[`${block.id}-Hinglish`] ? (
+                    <>
+                      <Loader2 size={12} className="animate-spin" />
+                      <span className="text-[9px] font-black uppercase">Generating...</span>
+                    </>
+                  ) : (
+                    <Sparkles size={12} className="group-hover/ai:animate-pulse" />
+                  )}
+                </button>
               </div>
               <button
                 type="button"
@@ -231,6 +246,21 @@ function BlockEditor({ block, idx, total, onChange, onDelete, onMove }) {
               <div className="flex items-center gap-3">
                 <div className="w-2 h-2 rounded-full bg-amber-500 shadow-sm shadow-amber-200" />
                 <Label>4. Narration Script (English AI)</Label>
+                <button 
+                  onClick={() => onGenerateTranscript('English', idx)}
+                  disabled={transcriptLoading[`${block.id}-English`]}
+                  className="flex items-center gap-2 p-1.5 rounded-lg bg-amber-50 text-amber-600 hover:bg-amber-600 hover:text-white transition-all group/ai disabled:opacity-50"
+                  title="Generate AI Transcript"
+                >
+                  {transcriptLoading[`${block.id}-English`] ? (
+                    <>
+                      <Loader2 size={12} className="animate-spin" />
+                      <span className="text-[9px] font-black uppercase">Generating...</span>
+                    </>
+                  ) : (
+                    <Sparkles size={12} className="group-hover/ai:animate-pulse" />
+                  )}
+                </button>
               </div>
               <button
                 type="button"
@@ -324,6 +354,8 @@ export default function AdminLessonEditor() {
     blocks: [],
   });
 
+  const [transcriptLoading, setTranscriptLoading] = useState({}); // { 'blockId-lang': true }
+
   const [courseList, setCourseList] = useState(DEFAULT_COURSES);
 
   const showToast = (msg, type = 'success') => {
@@ -345,8 +377,15 @@ export default function AdminLessonEditor() {
         if (Array.isArray(data)) {
           setAllLessons(data);
           if (!isNew) {
-            const l = data.find(l => l.slug === slug);
-            if (l) setLesson(l);
+            const foundLesson = data.find(l => l.slug === slug);
+            if (foundLesson) {
+              // Ensure all blocks have IDs to avoid redundancy bugs
+              const sanitizedBlocks = (foundLesson.blocks || []).map(b => ({
+                ...b,
+                id: b.id || `block-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
+              }));
+              setLesson({ ...foundLesson, blocks: sanitizedBlocks });
+            }
           } else {
             // Reset for new lesson
             const course = location.state?.topic || 'HTML';
@@ -401,6 +440,47 @@ export default function AdminLessonEditor() {
       blocks.splice(to, 0, moved);
       return { ...l, blocks };
     });
+  };
+
+  const handleGenerateTranscript = async (lang, blockIdx) => {
+    const currentBlock = lesson.blocks[blockIdx];
+    const loadingKey = `${currentBlock.id}-${lang}`;
+    setTranscriptLoading(prev => ({ ...prev, [loadingKey]: true }));
+
+    const fullContent = lesson.blocks.map(b => 
+      lang === 'Hinglish' ? b.visibleText : b.englishText
+    ).join('\n---\n');
+    
+    const scriptKey = lang === 'Hinglish' ? 'teachingScript' : 'englishTeachingScript';
+    
+    try {
+      const res = await fetch(`${API}/api/ai/generate-transcript`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          fullContent, 
+          blockIndex: blockIdx,
+          language: lang 
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setLesson(l => {
+          const newBlocks = [...l.blocks];
+          newBlocks[blockIdx] = {
+            ...newBlocks[blockIdx],
+            [scriptKey]: { ...newBlocks[blockIdx][scriptKey], transcript: data.transcript }
+          };
+          return { ...l, blocks: newBlocks };
+        });
+      } else {
+        alert(data.error || 'Failed to generate transcript');
+      }
+    } catch (err) {
+      alert('Network error');
+    } finally {
+      setTranscriptLoading(prev => ({ ...prev, [loadingKey]: false }));
+    }
   };
 
   const handleSave = async () => {
@@ -488,7 +568,7 @@ export default function AdminLessonEditor() {
                 onChange={e => setField('course', e.target.value)}
                 className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-800 outline-none focus:ring-2 focus:ring-blue-500/30"
               >
-                {courseList.map(c => <option key={c} value={c}>{c}</option>)}
+                {courseList.map((c, idx) => <option key={`${c}-${idx}`} value={c}>{c}</option>)}
               </select>
             </Field>
 
@@ -521,7 +601,7 @@ export default function AdminLessonEditor() {
                 .sort((a, b) => (a.chapterOrder || 0) - (b.chapterOrder || 0))
                 .map((l, idx) => (
                   <button
-                    key={l.slug}
+                    key={l.slug || `lesson-${idx}`}
                     onClick={() => {
                       if (l.slug === lesson.slug) return;
                       if (window.confirm('Save changes before leaving?')) {
@@ -575,13 +655,15 @@ export default function AdminLessonEditor() {
           <div className="space-y-6">
             {lesson.blocks.map((block, idx) => (
               <BlockEditor
-                key={block.id}
+                key={block.id || `block-${idx}`}
                 block={block}
                 idx={idx}
                 total={lesson.blocks.length}
                 onChange={updateBlock}
                 onDelete={deleteBlock}
                 onMove={moveBlock}
+                onGenerateTranscript={handleGenerateTranscript}
+                transcriptLoading={transcriptLoading}
               />
             ))}
 

@@ -18,7 +18,8 @@ import multer from 'multer';          // Multer: Middleware for handling file up
 import mongoose from 'mongoose';      // Mongoose: The "bridge" between Node.js and MongoDB (the database).
 import { OAuth2Client } from 'google-auth-library'; // For verifying Google Login credentials.
 import { ElevenLabsClient } from '@elevenlabs/elevenlabs-js'; // SDK for generating AI voices.
-import fetch from 'node-fetch';       // Fetch: To make requests from this server to other servers (like Judge0).
+import fetch from 'node-fetch';
+import compression from 'compression';       // Fetch: To make requests from this server to other servers (like Judge0).
 
 // Helper variables to get the current directory path (since we use ES Modules)
 const __filename = fileURLToPath(import.meta.url);
@@ -36,13 +37,28 @@ console.log('🔗 MONGODB_URI:', process.env.MONGODB_URI ? 'Detected (ends with 
 
 // 3. MIDDLEWARE SETUP
 // Middleware are like "filters" that the request goes through before reaching the routes.
-app.use(cors());                      // Enable CORS so the React app can access this API.
-app.use(express.json());              // Allows the server to understand and parse JSON data sent by the frontend.
+app.use(cors());
+app.use(compression());
+app.use(express.json());
+
+// Request Logging Middleware (to see which routes are slow)
+app.use((req, res, next) => {
+  const start = Date.now();
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    if (duration > 1000) {
+      console.log(`⚠️ SLOW ROUTE: ${req.method} ${req.url} - ${duration}ms`);
+    }
+  });
+  next();
+});
 
 // 4. DATABASE CONNECTION (MongoDB Atlas)
 // We use Mongoose to connect to our cloud database.
 mongoose.connect(process.env.MONGODB_URI, {
-  serverSelectionTimeoutMS: 15000,    // Wait 15 seconds before giving up if the server is slow.
+  serverSelectionTimeoutMS: 15000,
+  maxPoolSize: 10,                    // Maintain up to 10 socket connections
+  socketTimeoutMS: 45000,             // Close sockets after 45 seconds of inactivity
 })
   .then(() => {
     console.log('✅ Connected to MongoDB Atlas');
@@ -68,6 +84,7 @@ const topicSchema = new mongoose.Schema({
   icon: String,                       // Icon name (e.g., 'python', 'code')
   description: String,                // Detailed description
   status: String,                     // Current status (e.g., 'active', 'coming_soon')
+  orderIndex: Number,                 // Custom order for display on landing page
 }, { timestamps: true });              // Automatically adds 'createdAt' and 'updatedAt' fields.
 
 // Lesson Schema: Stores the actual course content.
@@ -102,12 +119,16 @@ const questionSchema = new mongoose.Schema({
   lessonId: String,                   // Link to a specific Lesson (Chapter)
   type: { type: String, enum: ['mcq', 'output', 'debug', 'coding'] }, // Type of question
   question: String,
+  englishQuestion: String,            // English version
   options: [String],                  // Only for MCQ
+  englishOptions: [String],           // English version
   correctAnswer: String,
   explanation: String,                // Why the answer is correct
+  englishExplanation: String,         // English version
   difficulty: { type: String, enum: ['easy', 'medium', 'hard'], default: 'easy' },
   starterCode: String,                // Default code for coding questions
   testCases: [{ input: String, expectedOutput: String }], // To verify user's code
+  medium: { type: String, enum: ['hinglish', 'english', 'both'], default: 'both' },
 }, { timestamps: true });
 
 // Progress Schema: Tracks user performance in practice sessions.
@@ -359,7 +380,7 @@ app.post('/api/admin/upload-audio', upload.single('audio'), async (req, res) => 
 // Get All Lessons
 app.get('/api/lessons', async (req, res) => {
   try {
-    const lessons = await Lesson.find().sort({ chapterOrder: 1 });
+    const lessons = await Lesson.find({}, 'title slug course chapterOrder topicId').sort({ chapterOrder: 1 });
     res.json(lessons);
   } catch (error) {
     res.status(500).json({ error: 'Failed to load lessons' });
@@ -405,7 +426,7 @@ app.delete('/api/admin/delete-lesson/:slug', async (req, res) => {
 // Get All Topics
 app.get('/api/topics', async (req, res) => {
   try {
-    const topics = await Topic.find().sort({ createdAt: 1 });
+    const topics = await Topic.find().sort({ orderIndex: 1 });
     res.json(topics);
   } catch (error) {
     res.status(500).json({ error: 'Failed to load topics' });
@@ -646,6 +667,235 @@ app.delete('/api/admin/practice/:id', async (req, res) => {
     await Question.findByIdAndDelete(req.params.id);
     res.json({ success: true });
   } catch (err) { res.status(500).json({ error: 'Error' }); }
+});
+
+// --- AI EXPLANATION (OpenRouter) ---
+app.post('/api/ai/explain', async (req, res) => {
+  try {
+    const { question, options, selectedOption, correctAnswer, userCode, type, language, message } = req.body;
+    
+    let prompt = "";
+    const isInitial = !message || message.includes("Please explain this question");
+
+    if (isInitial) {
+      if (type === 'mcq' || type === 'output') {
+        prompt = `
+          You are a professional coding teacher. Provide a formal, direct, and clean explanation.
+          Question: ${question}
+          Options: ${options ? options.join(', ') : 'N/A'}
+          Student's Answer: ${selectedOption}
+          Correct Answer: ${correctAnswer}
+          
+          Explain why the student's answer was correct or incorrect. 
+          Use a formal and professional tone. Do NOT use emojis.
+          Respond in ${language}.
+          Structure: Use simple paragraphs and clear bullet points. Keep it concise.
+        `;
+      } else {
+        prompt = `
+          You are a professional coding teacher. Provide a formal, direct, and clean explanation.
+          Question: ${question}
+          User's Code: ${userCode}
+          Correct Solution: ${correctAnswer}
+          
+          Explain the concept and the student's mistake or success.
+          Use a formal and professional tone. Do NOT use emojis.
+          Respond in ${language}.
+          Structure: Use simple paragraphs and clear bullet points. Keep it concise.
+        `;
+      }
+    } else {
+      prompt = `
+        You are a professional coding teacher. We were discussing: "${question}".
+        Answer was: "${correctAnswer}".
+        Follow-up: "${message}"
+        
+        Provide a formal, direct, and emoji-free answer in ${language}.
+      `;
+    }
+
+    console.log('AI Explanation Request for:', question.slice(0, 50) + '...');
+    if (!process.env.OPENROUTER_API_KEY) {
+      console.error('CRITICAL: OPENROUTER_API_KEY is missing from .env');
+      return res.status(500).json({ success: false, error: 'API Key missing' });
+    }
+
+    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
+        "HTTP-Referer": "http://localhost:5173",
+        "X-Title": "SummerCode",
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        "model": "openrouter/auto",
+        "messages": [
+          {"role": "user", "content": prompt}
+        ]
+      })
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+      console.error('OpenRouter API Error:', data);
+      return res.status(response.status).json({ success: false, error: data.error?.message || 'OpenRouter Error' });
+    }
+
+    if (data.choices && data.choices[0]) {
+      const explanation = data.choices[0].message.content;
+      res.json({ success: true, explanation });
+    } else {
+      res.status(500).json({ success: false, error: 'Empty response from AI' });
+    }
+  } catch (err) {
+    console.error('AI Explanation Error:', err);
+    res.status(500).json({ success: false, error: 'Failed to generate AI explanation' });
+  }
+});
+
+// --- AI AUDIO GENERATION (ElevenLabs) ---
+const elevenlabs = new ElevenLabsClient({ apiKey: process.env.ELEVEN_LABS_KEY });
+
+// Generate AI voice from text
+app.post('/api/admin/generate-audio', async (req, res) => {
+  try {
+    const { text } = req.body;
+    const voiceId = process.env.ELEVEN_LABS_VOICE_ID || 'JBFqnCBsd6RMkjVDRZzb';
+
+    if (!text) return res.status(400).json({ success: false, error: 'Text is required' });
+
+    const audioStream = await elevenlabs.generate({
+      voice: voiceId,
+      text: text,
+      model_id: "eleven_multilingual_v2",
+    });
+
+    // Convert stream to buffer
+    const chunks = [];
+    for await (const chunk of audioStream) {
+      chunks.push(chunk);
+    }
+    const audioBuffer = Buffer.concat(chunks);
+
+    const filename = `ai-${Date.now()}.mp3`;
+    
+    // Save to DB
+    await AudioFile.findOneAndUpdate(
+      { filename },
+      {
+        filename,
+        data: audioBuffer,
+        contentType: 'audio/mpeg'
+      },
+      { upsert: true }
+    );
+
+    res.json({ success: true, audioUrl: `/api/audio-db/${filename}`, filename });
+  } catch (err) {
+    console.error('ElevenLabs Error:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Upload custom audio
+app.post('/api/admin/upload-audio', upload.single('audio'), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ success: false, error: 'No file uploaded' });
+    const filename = req.file.originalname;
+    await AudioFile.findOneAndUpdate(
+      { filename },
+      {
+        filename,
+        data: req.file.buffer,
+        contentType: req.file.mimetype
+      },
+      { upsert: true }
+    );
+    res.json({ success: true, audioUrl: `/api/audio-db/${filename}`, filename });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Get Audio from DB
+app.get('/api/audio-db/:filename', async (req, res) => {
+  try {
+    const audioFile = await AudioFile.findOne({ filename: req.params.filename });
+    if (!audioFile) return res.status(404).send('Audio not found');
+    res.set('Content-Type', audioFile.contentType);
+    res.send(audioFile.data);
+  } catch (err) {
+    res.status(500).send(err.message);
+  }
+});
+
+// --- AI TRANSCRIPT GENERATION ---
+app.post('/api/ai/generate-transcript', async (req, res) => {
+  try {
+    const { fullContent, blockIndex, language } = req.body;
+    
+    if (!fullContent) {
+      return res.status(400).json({ success: false, error: 'Full lesson content is required' });
+    }
+
+    const blocks = fullContent.split('\n---\n');
+    const currentContent = blocks[blockIndex];
+
+    const prompt = `
+      You are an expert educational scriptwriter for an AI teacher.
+      
+      FULL LESSON CONTEXT (for flow and continuity):
+      ${fullContent}
+
+      SPECIFIC TASK:
+      Write the spoken narration script ONLY for the content in Block #${blockIndex + 1}.
+      Block #${blockIndex + 1} Content: "${currentContent}"
+
+      RULES:
+      1. Use the full lesson context to ensure this block's narration flows perfectly from what came before.
+      2. If this is the very first block, include a brief welcome.
+      3. If this is not the first block, use a natural transition from the previous content.
+      4. LANGUAGE: ${language} (Professional tone).
+      5. TTS OPTIMIZATION (CRITICAL - Universal for all Code):
+         - DO NOT use technical symbols in the narration (e.g., avoid <, >, #, _, (, ), {, }, [, ], /, \).
+         - Convert these into spoken words if they must be mentioned (e.g., "hashtag include", "underscore", "opening parenthesis", "curly braces").
+         - For HTML tags, use "tag" (e.g., "body tag" instead of <body>).
+         - For Python/C/JS, explain the syntax in natural words (e.g., use "function" or "variable" instead of literal code snippets).
+         - The script must be 100% speakable. If a symbol is hard for an AI to read, replace it with its name or a description.
+      6. Return ONLY the raw transcript text for this specific block. 
+      7. DO NOT include "Block #", "Transcript:", "Here is the script", or any other text. 
+      8. DO NOT use emojis.
+    `;
+
+    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
+        "HTTP-Referer": "http://localhost:5173",
+        "X-Title": "SummerCode",
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        "model": "openrouter/auto",
+        "messages": [
+          {"role": "user", "content": prompt}
+        ]
+      })
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+      console.error('OpenRouter Transcript Error:', data);
+      return res.status(response.status).json({ success: false, error: data.error?.message || 'AI Error' });
+    }
+
+    const transcript = data.choices[0].message.content.trim();
+    res.json({ success: true, transcript });
+  } catch (err) {
+    console.error('Transcript API Error:', err);
+    res.status(500).json({ success: false, error: 'Failed to generate transcript' });
+  }
 });
 
 // --- SERVER START ---
