@@ -93,7 +93,7 @@ export default function MainLayout({ children }) {
 
         {/* 3. Main Content Area: This is where pages like LessonPage are displayed ({children}) */}
         <main className={clsx(
-          "flex-1 overflow-y-auto w-full transition-all duration-500",
+          "flex-1 overflow-y-auto w-full transition-[padding] duration-500",
           isPracticePage ? "bg-[#2e3748]" : "bg-slate-50",
           "pl-0",
           // Adjust padding based on whether the sidebar is collapsed or not.

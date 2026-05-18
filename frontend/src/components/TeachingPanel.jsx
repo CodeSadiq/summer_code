@@ -68,7 +68,7 @@ export default function TeachingPanel() {
         {/* 1. Header Area */}
         <div className="px-6 py-1.5 md:pt-6 md:pb-5 border-b border-slate-100 text-center shrink-0">
           <span className="text-[8px] md:text-[10px] font-bold tracking-[0.2em] text-slate-500 uppercase">
-            AI Assistant
+            Guided Teaching
           </span>
         </div>
 

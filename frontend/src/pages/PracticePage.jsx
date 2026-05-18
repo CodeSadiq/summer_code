@@ -11,7 +11,7 @@ import { useTeachingState } from '../contexts/TeachingContext';
 import CodeBlock from '../components/CodeBlock';
 
 export default function PracticePage() {
-  const { courseId, topicId } = useParams();
+  const { courseId, chapterId } = useParams();
   const { isEnglish, setIsEnglish } = useTeachingState();
   const navigate = useNavigate();
   const [questions, setQuestions] = useState([]);
@@ -31,18 +31,25 @@ export default function PracticePage() {
   const user = JSON.parse(localStorage.getItem('studentData') || '{}');
 
   useEffect(() => {
+    // Reset state on chapter change
+    setQuestions([]);
+    setCurrentIndex(0);
+    setAnswers({});
+    setScore(0);
+    setShowSummary(false);
+
     fetchQuestions();
     fetchLessonTitle();
-  }, [topicId]);
+  }, [chapterId]);
 
   const fetchQuestions = async () => {
     try {
       setLoading(true);
       let url = `${API_URL}/api/practice?userId=${user.email}`;
       if (courseId === 'Course') {
-        url += `&topicId=${topicId}`;
+        url += `&courseId=${chapterId}`;
       } else {
-        url += `&topicId=${courseId}&lessonId=${topicId}`;
+        url += `&courseId=${courseId}&lessonId=${chapterId}`;
       }
       const res = await fetch(url);
       const data = await res.json();
@@ -65,11 +72,11 @@ export default function PracticePage() {
     try {
       const res = await fetch(`${API_URL}/api/lessons`);
       const data = await res.json();
-      const lesson = data.find(l => l.slug === topicId);
+      const lesson = data.find(l => l.slug === chapterId);
       if (lesson) setLessonTitle(lesson.title);
-      else setLessonTitle(topicId);
+      else setLessonTitle(chapterId);
     } catch (err) {
-      setLessonTitle(topicId);
+      setLessonTitle(chapterId);
     }
   };
 
@@ -181,7 +188,7 @@ export default function PracticePage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           userId: user.email,
-          topicId,
+          courseId: (courseId === 'Course' ? chapterId : courseId),
           score: finalScorePerc
         })
       });
@@ -262,7 +269,7 @@ export default function PracticePage() {
               <Trophy size={40} />
             </div>
             <h2 className="text-4xl md:text-5xl font-black text-white tracking-tighter">Session Complete!</h2>
-            <p className="text-slate-400 font-bold uppercase tracking-[0.3em] text-[10px]">Topic: {topicId}</p>
+            <p className="text-slate-400 font-bold uppercase tracking-[0.3em] text-[10px]">Course: {courseId === 'Course' ? chapterId : courseId}</p>
           </div>
 
           <div className="grid grid-cols-2 gap-12 py-8">
@@ -303,7 +310,7 @@ export default function PracticePage() {
           <div className="flex items-center gap-5">
             <div className="flex flex-col">
               <h1 className="text-base font-black text-white uppercase tracking-[0.2em] leading-none mb-2">
-                {lessonTitle || topicId}
+                {lessonTitle || chapterId}
               </h1>
               <div className="flex items-center gap-2">
                 <div className="flex gap-1">
@@ -317,14 +324,7 @@ export default function PracticePage() {
           </div>
 
           <div className="flex items-center gap-6">
-            <button
-              onClick={() => setIsEnglish(!isEnglish)}
-              className="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 border border-white/5 transition-all active:scale-95"
-            >
-              <Sparkles size={12} className={clsx(isEnglish ? "text-blue-400" : "text-emerald-400")} />
-              {isEnglish ? "English Mode" : "Hinglish Mode"}
-            </button>
-            <div className="w-px h-8 bg-white/5" />
+
             <div className="flex items-center gap-4">
               <span className="text-5xl font-black text-white tracking-tighter">
                 {String(currentIndex + 1).padStart(2, '0')}

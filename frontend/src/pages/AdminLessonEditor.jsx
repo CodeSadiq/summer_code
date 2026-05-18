@@ -348,7 +348,7 @@ export default function AdminLessonEditor() {
     id: '',
     slug: '',
     title: '',
-    course: location.state?.topic || 'HTML',
+    course: location.state?.course || 'HTML',
     description: '',
     chapterOrder: 1,
     blocks: [],
@@ -364,31 +364,25 @@ export default function AdminLessonEditor() {
   };
 
   useEffect(() => {
-    fetch(`${API}/api/topics`)
+    setLoading(true);
+
+    fetch(`${API}/api/courses`)
       .then(r => r.json())
       .then(data => {
         if (Array.isArray(data)) setCourseList(data.map(t => t.name));
       })
       .catch(console.error);
 
+    // Fetch sidebar lessons
     fetch(`${API}/api/lessons`)
       .then(r => r.json())
       .then(data => {
         if (Array.isArray(data)) {
           setAllLessons(data);
-          if (!isNew) {
-            const foundLesson = data.find(l => l.slug === slug);
-            if (foundLesson) {
-              // Ensure all blocks have IDs to avoid redundancy bugs
-              const sanitizedBlocks = (foundLesson.blocks || []).map(b => ({
-                ...b,
-                id: b.id || `block-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
-              }));
-              setLesson({ ...foundLesson, blocks: sanitizedBlocks });
-            }
-          } else {
+          
+          if (isNew) {
             // Reset for new lesson
-            const course = location.state?.topic || 'HTML';
+            const course = location.state?.course || 'HTML';
             const courseLessons = data.filter(l => l.course === course);
             const nextOrder = courseLessons.length > 0 
               ? Math.max(...courseLessons.map(l => l.chapterOrder || 0)) + 1 
@@ -403,11 +397,30 @@ export default function AdminLessonEditor() {
               chapterOrder: nextOrder,
               blocks: [],
             });
+            setLoading(false);
           }
         }
-        setLoading(false);
       })
       .catch(() => { showToast('Failed to load lessons', 'error'); setLoading(false); });
+
+    // Fetch full active lesson data
+    if (!isNew) {
+      fetch(`${API}/api/lessons/${slug}`)
+        .then(r => r.json())
+        .then(foundLesson => {
+          if (foundLesson && !foundLesson.error) {
+            const sanitizedBlocks = (foundLesson.blocks || []).map(b => ({
+              ...b,
+              id: b.id || `block-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
+            }));
+            setLesson({ ...foundLesson, blocks: sanitizedBlocks });
+          } else {
+            showToast('Lesson not found', 'error');
+          }
+          setLoading(false);
+        })
+        .catch(() => { showToast('Failed to load lesson content', 'error'); setLoading(false); });
+    }
   }, [slug, isNew, location.state]);
 
   const setField = (key, val) => setLesson(l => ({ ...l, [key]: val }));
@@ -633,16 +646,6 @@ export default function AdminLessonEditor() {
                 <Plus size={14} /> Add New Chapter
               </button>
             </div>
-          </Section>
-
-          <Section title="Lesson Abstract" icon={<AlignLeft size={14} />}>
-            <textarea
-              value={lesson.description}
-              onChange={e => setField('description', e.target.value)}
-              rows={4}
-              placeholder="Brief summary..."
-              className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium text-slate-600 outline-none focus:ring-2 focus:ring-blue-500/30 resize-none"
-            />
           </Section>
         </aside>
 

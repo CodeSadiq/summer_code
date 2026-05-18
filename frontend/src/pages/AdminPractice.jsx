@@ -9,13 +9,13 @@ import clsx from 'clsx';
 
 export default function AdminPractice() {
   const navigate = useNavigate();
-  const { topicId, questionId } = useParams();
-  const [topics, setTopics] = useState([]);
+  const { courseId, questionId } = useParams();
+  const [courses, setCourses] = useState([]);
   const [lessons, setLessons] = useState([]);
   const [questions, setQuestions] = useState([]);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
-    topicId: '',
+    courseId: '',
     lessonId: '',
     type: 'mcq',
     question: '',
@@ -31,11 +31,11 @@ export default function AdminPractice() {
     medium: 'both' // New field: 'hinglish', 'english', 'both'
   });
 
-  const selectedTopic = topicId || '';
+  const selectedCourse = courseId || '';
   const isFormMode = window.location.pathname.includes('/add') || !!questionId;
 
   useEffect(() => {
-    fetchTopics();
+    fetchCourses();
     fetchLessons();
     fetchQuestions();
   }, []);
@@ -52,11 +52,11 @@ export default function AdminPractice() {
 
   useEffect(() => {
     fetchQuestions();
-  }, [topicId]);
+  }, [courseId]);
 
   const resetForm = () => {
     setFormData({
-      topicId: topicId || '',
+      courseId: courseId || '',
       lessonId: '',
       type: 'mcq',
       question: '',
@@ -80,15 +80,15 @@ export default function AdminPractice() {
     } else if (window.location.pathname.endsWith('/add')) {
        resetForm();
     }
-  }, [questionId, topicId, questions]);
+  }, [questionId, courseId, questions]);
 
-  const fetchTopics = async () => {
+  const fetchCourses = async () => {
     try {
-      const res = await fetch(`${API_URL}/api/topics`);
+      const res = await fetch(`${API_URL}/api/courses`);
       const data = await res.json();
-      setTopics(data);
+      setCourses(data);
     } catch (err) {
-      console.error('Error fetching topics:', err);
+      console.error('Error fetching courses:', err);
     }
   };
 
@@ -119,7 +119,7 @@ export default function AdminPractice() {
         body: JSON.stringify(formData)
       });
       if (res.ok) {
-        navigate(`/admin/practice/${topicId}`);
+        navigate(`/admin/practice/${courseId}`);
         fetchQuestions();
       }
     } catch (err) {
@@ -145,30 +145,30 @@ export default function AdminPractice() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="space-y-4">
             <button 
-              onClick={() => isFormMode ? navigate(`/admin/practice/${topicId}`) : selectedTopic ? navigate('/admin/practice') : navigate('/admin')}
+              onClick={() => isFormMode ? navigate(`/admin/practice/${courseId}`) : selectedCourse ? navigate('/admin/practice') : navigate('/admin')}
               className="flex items-center gap-2 text-slate-400 hover:text-slate-600 font-bold text-[10px] uppercase tracking-widest transition-all group"
             >
               <div className="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center group-hover:bg-slate-100 group-hover:border-slate-300 transition-all">
                 <ChevronLeft size={14} className="mr-0.5" />
               </div>
-              {isFormMode ? 'Back to List' : selectedTopic ? 'Back to Hub' : 'Back to Admin'}
+              {isFormMode ? 'Back to List' : selectedCourse ? 'Back to Hub' : 'Back to Admin'}
             </button>
             <div className="space-y-1">
               <h1 className="text-4xl font-black text-slate-900 tracking-tighter">
-                {isFormMode ? (questionId ? 'Edit Question' : 'Add Question') : selectedTopic ? `${topics.find(t => t.id === selectedTopic)?.name || selectedTopic} Practice` : 'Practice Management'}
+                {isFormMode ? (questionId ? 'Edit Question' : 'Add Question') : selectedCourse ? `${courses.find(t => t.id === selectedCourse)?.name || selectedCourse} Practice` : 'Practice Management'}
               </h1>
               <p className="text-slate-500 font-medium">
-                {isFormMode ? 'Refine your practice content' : selectedTopic ? 'Manage questions for this course' : 'Create and manage topic-based practice questions'}
+                {isFormMode ? 'Refine your practice content' : selectedCourse ? 'Manage questions for this course' : 'Create and manage course-based practice questions'}
               </p>
             </div>
           </div>
         </div>
 
         {/* 1. Hub View: Course Cards */}
-        {!selectedTopic && !isFormMode && (
+        {!selectedCourse && !isFormMode && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {topics.map(t => {
-              const topicQuestions = questions.filter(q => q.topicId === t.id);
+            {courses.map(t => {
+              const courseQuestions = questions.filter(q => q.courseId === t.id);
               return (
                 <div 
                   key={t.id}
@@ -182,7 +182,7 @@ export default function AdminPractice() {
                     <div>
                       <h3 className="text-xl font-black text-slate-900 tracking-tight transition-colors">{t.name}</h3>
                       <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">
-                        {topicQuestions.length} Questions
+                        {courseQuestions.length} Questions
                       </p>
                     </div>
                   </div>
@@ -193,7 +193,7 @@ export default function AdminPractice() {
         )}
 
         {/* 2. List View: Questions List */}
-        {selectedTopic && !isFormMode && (
+        {selectedCourse && !isFormMode && (
           <div className="space-y-6 animate-entrance">
             <div className="flex items-center justify-between border-b border-slate-200 pb-4">
               <div className="flex items-center gap-3">
@@ -203,7 +203,7 @@ export default function AdminPractice() {
                 </h2>
               </div>
               <button 
-                onClick={() => navigate(`/admin/practice/${selectedTopic}/add`)}
+                onClick={() => navigate(`/admin/practice/${selectedCourse}/add`)}
                 className="bg-blue-600 text-white px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-blue-700 shadow-lg shadow-blue-200 transition-all flex items-center gap-2"
               >
                 <Plus size={14} /> Add Question
@@ -215,7 +215,7 @@ export default function AdminPractice() {
                 <div className="flex justify-center py-20">
                   <Loader2 className="animate-spin text-blue-600" size={48} />
                 </div>
-              ) : questions.filter(q => q.topicId === selectedTopic).map(q => (
+              ) : questions.filter(q => q.courseId === selectedCourse).map(q => (
                 <div key={q._id} className="bg-white border border-slate-200 rounded-[2rem] p-8 flex items-center justify-between group hover:border-blue-200 transition-all">
                   <div className="flex items-center gap-6">
                     <div className={clsx(
@@ -238,12 +238,12 @@ export default function AdminPractice() {
                       {q.englishQuestion && (
                         <p className="text-sm font-medium text-slate-500 italic border-l-2 border-slate-200 pl-3">{q.englishQuestion}</p>
                       )}
-                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest pt-1">{q.topicId} • {q.type} • {q.medium || 'both'}</p>
+                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest pt-1">{q.courseId} • {q.type} • {q.medium || 'both'}</p>
                     </div>
                   </div>
 
                   <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all">
-                    <button onClick={() => navigate(`/admin/practice/${selectedTopic}/edit/${q._id}`)} className="p-3 bg-slate-50 text-slate-600 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition-all">
+                    <button onClick={() => navigate(`/admin/practice/${selectedCourse}/edit/${q._id}`)} className="p-3 bg-slate-50 text-slate-600 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition-all">
                       <Edit2 size={18} />
                     </button>
                     <button onClick={() => handleDelete(q._id)} className="p-3 bg-slate-50 text-slate-600 hover:bg-red-50 hover:text-red-600 rounded-xl transition-all">
@@ -263,7 +263,7 @@ export default function AdminPractice() {
               <h2 className="text-3xl font-black text-slate-900 tracking-tighter">
                 {questionId ? 'Edit Question' : 'Add New Question'}
               </h2>
-              <button onClick={() => navigate(`/admin/practice/${topicId}`)} className="p-2 hover:bg-slate-100 rounded-full transition-all">
+              <button onClick={() => navigate(`/admin/practice/${courseId}`)} className="p-2 hover:bg-slate-100 rounded-full transition-all">
                 <X size={24} />
               </button>
             </div>
@@ -271,15 +271,15 @@ export default function AdminPractice() {
             <form onSubmit={handleSave} className="space-y-8">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2">Course Topic</label>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2">Course</label>
                   <select
                     required
-                    value={formData.topicId}
-                    onChange={(e) => setFormData({ ...formData, topicId: e.target.value, lessonId: '' })}
+                    value={formData.courseId}
+                    onChange={(e) => setFormData({ ...formData, courseId: e.target.value, lessonId: '' })}
                     className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 font-bold outline-none focus:ring-2 focus:ring-blue-500 transition-all"
                   >
-                    <option value="">Select Topic</option>
-                    {topics.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                    <option value="">Select Course</option>
+                    {courses.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
                   </select>
                 </div>
                 <div className="space-y-2">
@@ -290,7 +290,7 @@ export default function AdminPractice() {
                     className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 font-bold outline-none focus:ring-2 focus:ring-blue-500 transition-all"
                   >
                     <option value="">All Chapters (General)</option>
-                    {lessons.filter(l => l.course === formData.topicId).map(l => (
+                    {lessons.filter(l => l.course === formData.courseId).map(l => (
                       <option key={l.id} value={l.id}>{l.title}</option>
                     ))}
                   </select>
@@ -528,7 +528,7 @@ export default function AdminPractice() {
               <div className="flex gap-4 pt-4">
                 <button
                   type="button"
-                  onClick={() => navigate(`/admin/practice/${topicId}`)}
+                  onClick={() => navigate(`/admin/practice/${courseId}`)}
                   className="flex-1 py-4 bg-slate-100 text-slate-600 rounded-2xl font-black text-xs uppercase tracking-widest transition-all"
                 >
                   Cancel

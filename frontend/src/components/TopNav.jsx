@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Code2, Sparkles, Moon, Sun, ArrowRight, User, Ban, LogOut, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Code2, Sparkles, Moon, Sun, ArrowRight, User, Ban, LogOut, ChevronDown, ChevronLeft, ChevronRight, Languages } from 'lucide-react';
 import { useTeachingState } from '../contexts/TeachingContext';
 import clsx from 'clsx';
 import { API_URL } from '../config';
@@ -17,21 +17,21 @@ function NavLink({ to, label }) {
 }
 
 export default function TopNav() {
-  const { isActive, startTeaching, activeLesson, continueTeaching, isEnglish } = useTeachingState();
-  const [topics, setTopics] = useState([]);
+  const { isActive, startTeaching, activeLesson, continueTeaching, isEnglish, setIsEnglish } = useTeachingState();
+  const [courses, setCourses] = useState([]);
   const [lessons, setLessons] = useState([]);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
 
   useEffect(() => {
-    fetch(`${API_URL}/api/topics`, { cache: 'no-store' })
+    fetch(`${API_URL}/api/courses`, { cache: 'no-store' })
       .then(res => res.json())
       .then(data => {
-        if (Array.isArray(data)) setTopics(data);
-        else setTopics([]);
+        if (Array.isArray(data)) setCourses(data);
+        else setCourses([]);
       })
-      .catch(err => console.error('Error fetching topics:', err));
+      .catch(err => console.error('Error fetching courses:', err));
 
     fetch(`${API_URL}/api/lessons`, { cache: 'no-store' })
       .then(res => res.json())
@@ -42,8 +42,8 @@ export default function TopNav() {
       .catch(err => console.error('Error fetching lessons:', err));
   }, [location.pathname]);
 
-  const getFirstLessonSlug = (courseName) => {
-    const courseLessons = lessons.filter(l => l.course === courseName);
+  const getFirstLessonSlug = (courseId) => {
+    const courseLessons = lessons.filter(l => l.course === courseId);
     if (courseLessons.length > 0) {
       return courseLessons.sort((a, b) => (a.chapterOrder || 0) - (b.chapterOrder || 0))[0].slug;
     }
@@ -68,7 +68,8 @@ export default function TopNav() {
           <span className="text-base sm:text-lg font-outfit font-black text-slate-900 tracking-tighter uppercase tracking-[0.08em]">SUMMERCODE</span>
         </Link>
         
-        {/* Slidable Topics Container - Loading from DB */}
+        {/* Slidable Courses Container - Loading from DB */}
+        {/* Slidable Courses Container - Loading from DB */}
         <div className="hidden md:flex items-center max-w-[500px] ml-4 relative group">
           <div className="bg-white border border-slate-200 rounded-full p-1 w-full flex items-center relative overflow-hidden shadow-sm">
             <div className="absolute left-1 z-10 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity">
@@ -82,23 +83,25 @@ export default function TopNav() {
                 WebkitMaskImage: 'linear-gradient(to right, transparent, black 10%, black 90%, transparent)'
               }}
             >
-              {topics.map((topic) => {
-                const slug = getFirstLessonSlug(topic.name);
-                const isNavigable = topic.status === 'Active' && slug;
+              {courses.map((course) => {
+                const slug = getFirstLessonSlug(course.id);
+                const isNavigable = course.status === 'Active' && slug;
 
                 return (
                   <Link
-                    key={topic.id}
+                    key={course.id}
                     to={isNavigable ? `/lessons/${slug}` : '#'}
                     onClick={(e) => !isNavigable && e.preventDefault()}
                     className={clsx(
                       "px-4 py-1 rounded-full text-[12px] font-bold transition-all duration-300 whitespace-nowrap",
                       isNavigable
-                        ? "text-slate-600 hover:text-black hover:bg-slate-50"
+                        ? (location.pathname.includes(`/lessons/${slug}`) || location.pathname.includes(`/practice/${course.id}`))
+                          ? "bg-slate-900 text-white"
+                          : "text-slate-600 hover:text-black hover:bg-slate-50"
                         : "text-slate-400 cursor-not-allowed opacity-60"
                     )}
                   >
-                    {topic.name}
+                    {course.name}
                   </Link>
                 );
               })}
@@ -120,26 +123,15 @@ export default function TopNav() {
       </div>
 
       <div className="flex items-center gap-3 ml-4 flex-shrink-0">
-        {(activeLesson && location.pathname.startsWith('/lessons/')) && (() => {
-          // We allow starting teaching even if some audio is missing (it will fallback to timer)
-          // but we only show the button if there is a lesson and we are on a lesson page.
-
-          return (
-            <button
-              onClick={!isActive ? () => startTeaching(activeLesson) : undefined}
-              className={clsx(
-                "hidden md:flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold transition-all active:scale-95 shadow-sm",
-                isActive 
-                  ? "bg-slate-100 text-slate-400 cursor-default border border-slate-200" 
-                  : "bg-slate-900 hover:bg-slate-800 text-white"
-              )}
-            >
-              <Sparkles size={16} className={clsx(isActive ? "text-slate-300" : "text-yellow-400")} />
-              <span className="hidden lg:inline">{isActive ? "Teaching Active" : "Start Guided Teaching"}</span>
-              <span className="lg:hidden">{isActive ? "Active" : "Start Teaching"}</span>
-            </button>
-          );
-        })()}
+        <button
+          onClick={() => setIsEnglish(!isEnglish)}
+          className="flex items-center gap-2 px-3 py-2 rounded-lg text-[13px] font-bold text-slate-600 hover:text-black hover:bg-slate-100 transition-all duration-300 active:scale-95 mr-2 md:mr-6"
+          title="Change Language"
+        >
+          <Languages size={18} className="text-slate-500" />
+          <span className="hidden sm:inline-block w-[55px] text-left">{isEnglish ? "English" : "Hinglish"}</span>
+          <span className="sm:hidden inline-block w-[20px] text-center">{isEnglish ? "EN" : "HI"}</span>
+        </button>
         {localStorage.getItem('adminToken') || localStorage.getItem('studentToken') ? (
           <div className="relative">
             <button

@@ -19,8 +19,8 @@ export default function AdminPage() {
   const [toast, setToast] = useState(null);
   const [deleting, setDeleting] = useState(null);
   const [courses, setCourses] = useState([]);
-  const [allTopics, setAllTopics] = useState([]);
-  const [editingTopic, setEditingTopic] = useState(null);
+  const [allCourses, setAllCourses] = useState([]);
+  const [editingCourse, setEditingCourse] = useState(null);
   const [credits, setCredits] = useState(null);
 
   const showToast = (msg, type = 'success') => {
@@ -43,15 +43,15 @@ export default function AdminPage() {
       })
       .catch(() => { showToast('Could not connect to server', 'error'); setLoading(false); });
 
-    // Fetch Topics
-    fetch(`${API}/api/topics`)
+    // Fetch Courses
+    fetch(`${API}/api/courses`)
       .then(r => r.json())
       .then(data => {
         if (Array.isArray(data)) {
-          setAllTopics(data);
+          setAllCourses(data);
           setCourses(data.map(t => t.name));
         } else {
-          setAllTopics([]);
+          setAllCourses([]);
           setCourses([]);
         }
       })
@@ -70,10 +70,10 @@ export default function AdminPage() {
       .catch(console.error);
   }, []);
 
-  const [isAddingTopic, setIsAddingTopic] = useState(false);
-  const [newTopicName, setNewTopicName] = useState('');
+  const [isAddingCourse, setIsAddingCourse] = useState(false);
+  const [newCourseName, setNewCourseName] = useState('');
 
-  const handleAddTopic = async (e) => {
+  const handleAddCourse = async (e) => {
     e.preventDefault();
     const name = newTopicName.trim();
     if (!name) return;
@@ -82,45 +82,47 @@ export default function AdminPage() {
       return;
     }
 
-    const newTopic = {
-      id: name,
-      name: name,
+    const newCourse = {
+      id: name.replace(/\s+/g, ''),
+      name,
       subtitle: 'New Course',
+      englishSubtitle: 'New Course in English',
       description: 'Landing page description for this course.',
+      englishDescription: 'Landing page description for this course in English.',
       status: 'Coming Soon',
       icon: 'Code2'
     };
 
     try {
-      const res = await fetch(`${API_URL}/api/admin/save-topic`, {
+      const res = await fetch(`${API_URL}/api/admin/save-course`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newTopic)
+        body: JSON.stringify(newCourse)
       });
       const data = await res.json();
       if (data.success) {
-        setAllTopics(prev => [...prev, newTopic]);
+        setAllCourses(prev => [...prev, newCourse]);
         setCourses(prev => [...prev, name]);
         showToast(`Course "${name}" saved permanently`);
-        setNewTopicName('');
-        setIsAddingTopic(false);
+        setNewCourseName('');
+        setIsAddingCourse(false);
       }
     } catch {
       showToast('Failed to save course', 'error');
     }
   };
 
-  const handleDeleteTopic = async (topicName) => {
-    if (!window.confirm(`Delete the "${topicName}" course and all its landing page metadata?`)) return;
+  const handleDeleteCourse = async (courseName) => {
+    if (!window.confirm(`Delete the "${courseName}" course and all its landing page metadata?`)) return;
 
     try {
-      const res = await fetch(`${API}/api/admin/delete-topic/${topicName}`, { method: 'DELETE' });
+      const res = await fetch(`${API}/api/admin/delete-course/${courseName}`, { method: 'DELETE' });
       const data = await res.json();
       if (data.success) {
-        setCourses(prev => prev.filter(c => c !== topicName));
-        setAllTopics(prev => prev.filter(t => t.id !== topicName));
-        if (activeCourse === topicName) setActiveCourse('All');
-        showToast(`Course "${topicName}" deleted safely`);
+        setCourses(prev => prev.filter(c => c !== courseName));
+        setAllCourses(prev => prev.filter(t => t.id !== courseName));
+        if (activeCourse === courseName) setActiveCourse('All');
+        showToast(`Course "${courseName}" deleted safely`);
       }
     } catch {
       showToast('Failed to delete course', 'error');
@@ -152,7 +154,7 @@ export default function AdminPage() {
   const stats = {
     totalChapters: Array.isArray(lessons) ? lessons.length : 0,
     totalBlocks: Array.isArray(lessons) ? lessons.reduce((acc, l) => acc + (l.blocks?.length || 0), 0) : 0,
-    activeCourses: Array.isArray(allTopics) ? allTopics.length : 0,
+    activeCourses: Array.isArray(allCourses) ? allCourses.length : 0,
     audioClips: Array.isArray(lessons) ? lessons.reduce((acc, l) => {
       const audioCount = (l.blocks || []).filter(b => b.teachingScript?.audioUrl).length;
       return acc + audioCount;
@@ -193,26 +195,26 @@ export default function AdminPage() {
           <div className="flex items-center justify-between px-3 mb-2">
             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">FILTER BY COURSE</p>
             <button
-              onClick={() => setIsAddingTopic(!isAddingTopic)}
+              onClick={() => setIsAddingCourse(!isAddingCourse)}
               className={clsx(
                 "p-1 rounded-md transition-all",
-                isAddingTopic ? "bg-slate-100 text-red-500 hover:text-red-700" : "text-slate-400 hover:text-blue-600 hover:bg-slate-50"
+                isAddingCourse ? "bg-slate-100 text-red-500 hover:text-red-700" : "text-slate-400 hover:text-blue-600 hover:bg-slate-50"
               )}
-              title={isAddingTopic ? "Cancel" : "Add New Course"}
+              title={isAddingCourse ? "Cancel" : "Add New Course"}
             >
-              {isAddingTopic ? <X size={14} /> : <Plus size={14} />}
+              {isAddingCourse ? <X size={14} /> : <Plus size={14} />}
             </button>
           </div>
 
-          {isAddingTopic && (
-            <form onSubmit={handleAddTopic} className="px-3 mb-4 animate-in slide-in-from-top-2 duration-300">
+          {isAddingCourse && (
+            <form onSubmit={handleAddCourse} className="px-3 mb-4 animate-in slide-in-from-top-2 duration-300">
               <div className="relative group">
                 <input
                   autoFocus
                   type="text"
                   placeholder="Course name..."
-                  value={newTopicName}
-                  onChange={e => setNewTopicName(e.target.value)}
+                  value={newCourseName}
+                  onChange={e => setNewCourseName(e.target.value)}
                   className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 outline-none focus:border-blue-500 transition-all shadow-sm"
                 />
                 <button type="submit" className="absolute right-1 top-1 p-1 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-colors">
@@ -230,7 +232,6 @@ export default function AdminPage() {
                 label={c}
                 active={activeCourse === c}
                 onClick={() => setActiveCourse(c)}
-                onDelete={null} // Removed from here
               />
             ))}
           </div>
@@ -266,8 +267,8 @@ export default function AdminPage() {
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => {
-                      const t = allTopics.find(x => x.name === activeCourse);
-                      setEditingTopic(t || { id: activeCourse, name: activeCourse, subtitle: '', description: '', status: 'Active', icon: 'Code2' });
+                      const t = allCourses.find(x => x.name === activeCourse);
+                      setEditingCourse(t || { id: activeCourse, name: activeCourse, subtitle: '', description: '', englishDescription: '', status: 'Active', icon: 'Code2' });
                     }}
                     className="p-2 rounded-xl bg-slate-50 text-slate-400 hover:text-blue-600 transition-all border border-slate-100 shadow-sm"
                     title="Course Settings"
@@ -275,7 +276,7 @@ export default function AdminPage() {
                     <Settings size={16} />
                   </button>
                   <button
-                    onClick={() => handleDeleteTopic(activeCourse)}
+                    onClick={() => handleDeleteCourse(activeCourse)}
                     className="p-2 rounded-xl bg-slate-50 text-slate-400 hover:text-red-500 transition-all border border-slate-100 shadow-sm"
                     title={`Delete ${activeCourse}`}
                   >
@@ -288,7 +289,7 @@ export default function AdminPage() {
           </div>
           <div className="flex items-center gap-4">
             <button
-              onClick={() => navigate('/admin/lesson/new', { state: { topic: activeCourse === 'All' ? '' : activeCourse } })}
+              onClick={() => navigate('/admin/lesson/new', { state: { course: activeCourse === 'All' ? '' : activeCourse } })}
               className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-6 py-3 rounded-2xl text-sm font-bold transition-all shadow-lg shadow-blue-100 hover:-translate-y-0.5 active:translate-y-0"
             >
               <Plus size={18} /> New Lesson
@@ -334,21 +335,21 @@ export default function AdminPage() {
           {toast.msg}
         </div>
       )}
-      {/* Topic Settings Modal */}
-      {editingTopic && (
-        <TopicSettingsModal
-          topic={editingTopic}
-          onClose={() => setEditingTopic(null)}
+      {/* Course Settings Modal */}
+      {editingCourse && (
+        <CourseSettingsModal
+          course={editingCourse}
+          onClose={() => setEditingCourse(null)}
           onSave={(updated) => {
-            fetch(`${API}/api/admin/save-topic`, {
+            fetch(`${API}/api/admin/save-course`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify(updated)
             }).then(() => {
-              setAllTopics(prev => prev.map(t => t.id === updated.id ? updated : t));
-              setCourses(prev => prev.map(c => c === editingTopic.name ? updated.name : c));
+              setAllCourses(prev => prev.map(t => t.id === updated.id ? updated : t));
+              setCourses(prev => prev.map(c => c === editingCourse.name ? updated.name : c));
               showToast('Course settings updated');
-              setEditingTopic(null);
+              setEditingCourse(null);
             }).catch(() => showToast('Failed to save settings', 'error'));
           }}
         />
@@ -375,8 +376,8 @@ function SideItem({ icon, label, active, onClick }) {
   );
 }
 
-function TopicSettingsModal({ topic, onClose, onSave }) {
-  const [data, setData] = useState(topic);
+function CourseSettingsModal({ course, onClose, onSave }) {
+  const [data, setData] = useState(course);
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 animate-in fade-in duration-300">
@@ -403,11 +404,21 @@ function TopicSettingsModal({ topic, onClose, onSave }) {
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Subtitle</label>
+            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Subtitle (Hinglish)</label>
             <input
               value={data.subtitle}
-              placeholder="e.g. Modern Basics"
+              placeholder="e.g. The foundation of Web Development"
               onChange={e => setData({ ...data, subtitle: e.target.value })}
+              className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-3 text-sm font-bold text-slate-800 outline-none focus:ring-2 focus:ring-blue-500/30"
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Subtitle (English)</label>
+            <input
+              value={data.englishSubtitle || ''}
+              placeholder="e.g. Modern Basics in English"
+              onChange={e => setData({ ...data, englishSubtitle: e.target.value })}
               className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-3 text-sm font-bold text-slate-800 outline-none focus:ring-2 focus:ring-blue-500/30"
             />
           </div>
@@ -425,11 +436,21 @@ function TopicSettingsModal({ topic, onClose, onSave }) {
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Description</label>
+            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Description (Hinglish)</label>
             <textarea
               value={data.description}
-              rows={4}
+              rows={3}
               onChange={e => setData({ ...data, description: e.target.value })}
+              className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-3 text-sm font-bold text-slate-800 outline-none focus:ring-2 focus:ring-blue-500/30 resize-none"
+            />
+          </div>
+          
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Description (English)</label>
+            <textarea
+              value={data.englishDescription || ''}
+              rows={3}
+              onChange={e => setData({ ...data, englishDescription: e.target.value })}
               className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-3 text-sm font-bold text-slate-800 outline-none focus:ring-2 focus:ring-blue-500/30 resize-none"
             />
           </div>
@@ -465,7 +486,7 @@ function TopicSettingsModal({ topic, onClose, onSave }) {
           onClick={() => onSave(data)}
           className="w-full mt-4 bg-blue-600 hover:bg-blue-500 text-white py-4 rounded-2xl text-sm font-black transition-all shadow-xl shadow-blue-100"
         >
-          Save Topic Settings
+          Save Course Settings
         </button>
       </div>
     </div>

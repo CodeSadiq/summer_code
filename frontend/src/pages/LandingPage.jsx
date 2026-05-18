@@ -1,20 +1,22 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Code2, ArrowRight, Layers, Cpu, Mic2, MousePointer2, Sparkles } from 'lucide-react';
+import { Code2, ArrowRight, Layers, Cpu, Mic2, MousePointer2, Sparkles, Search } from 'lucide-react';
 import clsx from 'clsx';
 import CodeBlock from '../components/CodeBlock';
+import { useTeachingState } from '../contexts/TeachingContext';
 import { API_URL } from '../config';
 
 export default function LandingPage() {
-  const [topics, setTopics] = useState([]);
+  const { isEnglish } = useTeachingState();
+  const [courses, setCourses] = useState([]);
   const [lessons, setLessons] = useState([]);
 
   useEffect(() => {
-    fetch(`${API_URL}/api/topics`)
+    fetch(`${API_URL}/api/courses`)
       .then(r => r.json())
       .then(data => {
-        if (Array.isArray(data)) setTopics(data);
-        else setTopics([]);
+        if (Array.isArray(data)) setCourses(data);
+        else setCourses([]);
       })
       .catch(console.error);
 
@@ -27,8 +29,8 @@ export default function LandingPage() {
       .catch(console.error);
   }, []);
 
-  const getFirstLessonSlug = (courseName) => {
-    const courseLessons = lessons.filter(l => l.course === courseName);
+  const getFirstLessonSlug = (courseId) => {
+    const courseLessons = lessons.filter(l => l.course === courseId);
     if (courseLessons.length > 0) {
       return courseLessons.sort((a, b) => (a.chapterOrder || 0) - (b.chapterOrder || 0))[0].slug;
     }
@@ -46,7 +48,7 @@ export default function LandingPage() {
 
         {/* Static Code Symbols - Subtle visibility */}
         <div className="absolute top-[12vh] left-[5vw] text-8xl font-black font-mono text-[#282a36]/[0.08] select-none">{"{ }"}</div>
-        <div className="absolute top-[35vh] -right-[2vw] text-9xl font-black font-mono text-[#282a36]/[0.08] select-none">{"<div>"}</div>
+        <div className="absolute top-[35vh] right-4 text-9xl font-black font-mono text-[#282a36]/[0.08] select-none">{"<div>"}</div>
         <div className="absolute top-[75vh] left-[8vw] text-7xl font-black font-mono text-[#282a36]/[0.08] select-none">{"[ ]"}</div>
       </div>
 
@@ -57,26 +59,47 @@ export default function LandingPage() {
         <main className="relative z-20 pt-32 pb-32 px-6 flex flex-col items-center text-center max-w-[1600px] mx-auto">
 
           <h1 className="text-6xl md:text-8xl lg:text-[110px] font-outfit font-extrabold text-[#282a36] tracking-tight leading-[1.1] mb-12 max-w-[1400px] mt-10">
-            Coding Seekho <br className="hidden sm:block" />
+            {isEnglish ? "Learn to " : "Coding "}
             <span className="text-emerald-700">
-              Hinglish Mein.
+              {isEnglish ? "Code." : "Seekho."}
             </span>
           </h1>
 
 
 
 
-          <p className="text-lg md:text-xl text-[#282a36]/80 max-w-2xl mb-16 font-medium leading-relaxed">
-            An Integrated Guided Learning platform for programming concepts.
+          <p className="text-xl md:text-3xl text-[#282a36]/80 max-w-3xl mb-14 font-medium leading-relaxed tracking-tight">
+            {isEnglish
+              ? "With an integrated guided learning platform."
+              : "Guided Teaching ke saath Hinglish me."}
           </p>
 
-          <div className="flex flex-col sm:flex-row items-center gap-6">
-            <Link to={`/lessons/${lessons[0]?.slug || 'html-introduction'}`} className="group bg-[#282a36] text-white px-10 py-5 rounded-2xl font-bold transition-all hover:scale-105 active:scale-95 shadow-2xl flex items-center gap-3">
-              SHURU KAREIN — IT'S FREE
-              <ArrowRight className="group-hover:translate-x-1 transition-transform" />
-            </Link>
-            <Link to="/courses" className="bg-white text-[#282a36] border border-slate-200 px-10 py-5 rounded-2xl font-bold transition-all hover:bg-slate-50 active:scale-95">
-              SYLLABUS DEKHEIN
+          <div className="w-full max-w-4xl flex flex-col items-center">
+            <form
+              className="w-full flex items-center bg-white rounded-full p-2 border-2 border-white/40 mb-10 overflow-hidden transition-all focus-within:border-emerald-200 focus-within:ring-4 focus-within:ring-emerald-500/10"
+              onSubmit={(e) => {
+                e.preventDefault();
+                // Future search implementation
+              }}
+            >
+              <input
+                type="text"
+                placeholder={isEnglish ? "Search our tutorials, e.g. HTML" : "Search karein, e.g. HTML"}
+                className="flex-1 bg-transparent px-8 py-5 outline-none text-[#282a36] font-medium text-xl placeholder:text-slate-400"
+              />
+              <button
+                type="submit"
+                className="bg-[#04aa6d] hover:bg-[#038c5a] text-white p-5 px-12 md:px-16 rounded-full transition-colors flex items-center justify-center active:scale-95"
+              >
+                <Search size={26} strokeWidth={3} />
+              </button>
+            </form>
+
+            <Link
+              to="/courses"
+              className="text-slate-600 font-bold text-xl hover:text-[#04aa6d] underline decoration-slate-300 hover:decoration-[#04aa6d] decoration-2 underline-offset-8 transition-colors tracking-tight"
+            >
+              {isEnglish ? "Not Sure Where To Begin?" : "Kahan Se Shuru Karein?"}
             </Link>
           </div>
         </main>
@@ -103,17 +126,29 @@ export default function LandingPage() {
           <div className="grid lg:grid-cols-4 gap-12 items-center">
             <div className="lg:col-span-1">
               <h2 className="text-3xl font-black text-white tracking-tighter mb-4">Guided Teaching</h2>
-              <div className="h-1.5 w-12 bg-blue-500 rounded-full"></div>
+              <div className="h-1.5 w-12 bg-white rounded-full"></div>
             </div>
 
             <div className="lg:col-span-3 grid md:grid-cols-3 gap-8">
               {[
-                { title: "Har Line Ki Clarity", desc: "Code ka har ek line pure Hinglish mein samjhaya gaya hai—koi logic nahi chhutega.", icon: <Mic2 size={22} /> },
-                { title: "Lecture Mode", desc: "Pure content ko ek lecture ki tarah dekhein. Highlighter mentor ki awaaz ko follow karta hai.", icon: <MousePointer2 size={22} /> },
-                { title: "Khud Try Karke Dekhein", desc: "Browser mein hi code likhein, edit karein aur run karein.", icon: <Code2 size={22} /> }
+                {
+                  title: isEnglish ? "Clarity in Every Line" : "Har Line Ki Clarity",
+                  desc: isEnglish ? "Every single line of code is explained in pure English—no logic is left behind." : "Code ka har ek line pure Hinglish mein samjhaya gaya hai—koi logic nahi chhutega.",
+                  icon: <Mic2 size={22} />
+                },
+                {
+                  title: "Lecture Mode",
+                  desc: isEnglish ? "Experience the content like a real lecture. The highlighter follows the mentor's voice." : "Pure content ko ek lecture ki tarah dekhein. Highlighter mentor ki awaaz ko follow karta hai.",
+                  icon: <MousePointer2 size={22} />
+                },
+                {
+                  title: isEnglish ? "Try It Yourself" : "Khud Try Karke Dekhein",
+                  desc: isEnglish ? "Write, edit, and run code directly in your browser." : "Browser mein hi code likhein, edit karein aur run karein.",
+                  icon: <Code2 size={22} />
+                }
               ].map((feature, idx) => (
                 <div key={idx} className="flex gap-5 items-start">
-                  <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-blue-400 flex-shrink-0 transition-all duration-300">
+                  <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-white flex-shrink-0 transition-all duration-300">
                     {feature.icon}
                   </div>
                   <div>
@@ -134,17 +169,24 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-6">
           <div className="flex flex-col md:flex-row md:items-end justify-between mb-24 gap-8">
             <div className="text-left">
-              <h2 className="text-5xl md:text-6xl font-black text-[#282a36] tracking-tighter mb-6">Available Courses</h2>
+              <h2 className="text-5xl md:text-6xl font-black text-[#282a36] tracking-tighter mb-6">
+                {isEnglish ? "Available Courses" : "Humare Courses"}
+              </h2>
               <p className="text-lg text-[#282a36]/80 max-w-2xl font-medium">
-                Join thousands of students learning to build for the future in their own language.
+                {isEnglish
+                  ? "Start your coding journey today in your own language, right from scratch."
+                  : "Coding seekhein Hinglish mein, bilkul scratch se."}
               </p>
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-            {topics.slice(0, 5).map((course) => {
-              const description = course.description || `Master the essentials of ${course.name} from scratch with hands-on practice.`;
-              const slug = getFirstLessonSlug(course.name);
+            {courses.slice(0, 5).map((course) => {
+              const fallbackDesc = isEnglish
+                ? `Master the essentials of ${course.name} from scratch with hands-on practice.`
+                : `${course.name} ko scratch se seekhein, hands-on practice ke saath.`;
+              const description = isEnglish ? (course.englishDescription || course.description || fallbackDesc) : (course.description || fallbackDesc);
+              const slug = getFirstLessonSlug(course.id);
               const isActive = course.status === 'Active' && slug;
 
               return (
@@ -181,13 +223,13 @@ export default function LandingPage() {
                         </div>
 
                         {isActive ? (
-                          <span className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-600 rounded-full text-[10px] font-black uppercase tracking-widest border border-emerald-100">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                            Active
+                          <span className="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-emerald-500">
+                            <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+                            {isEnglish ? "Active" : "Shuru Hai"}
                           </span>
                         ) : (
-                          <span className="px-3 py-1.5 bg-slate-200 text-slate-500 rounded-full text-[10px] font-black uppercase tracking-widest border border-slate-300">
-                            Coming Soon
+                          <span className="text-[11px] font-black uppercase tracking-widest text-slate-400">
+                            {isEnglish ? "Coming Soon" : "Jald Aa Raha Hai"}
                           </span>
                         )}
                       </div>
@@ -211,7 +253,7 @@ export default function LandingPage() {
                         "flex items-center gap-3 text-sm font-black uppercase tracking-widest transition-colors",
                         isActive ? "text-slate-600 group-hover:text-[#282a36]" : "text-slate-300"
                       )}>
-                        {isActive ? 'Seekhna Shuru Karein' : 'Pehle Se Taiyar Rahein'}
+                        {isActive ? (isEnglish ? 'Start Learning' : 'Seekhna Shuru Karein') : (isEnglish ? 'Coming Soon' : 'Pehle Se Taiyar Rahein')}
                         <div className={clsx(
                           "w-8 h-8 rounded-full flex items-center justify-center transition-transform",
                           isActive ? "bg-[#282a36] text-white group-hover:translate-x-2" : "bg-slate-200 text-slate-400"
@@ -238,9 +280,13 @@ export default function LandingPage() {
                   <div className="w-20 h-20 rounded-[2rem] bg-white/10 flex items-center justify-center text-white mb-8 group-hover:scale-110 group-hover:bg-emerald-500 transition-all duration-500">
                     <ArrowRight size={32} />
                   </div>
-                  <h3 className="text-3xl font-black text-white mb-4">View All Courses</h3>
+                  <h3 className="text-3xl font-black text-white mb-4">
+                    {isEnglish ? "Explore All Courses" : "Sabhi Courses Dekhein"}
+                  </h3>
                   <p className="font-medium text-slate-400">
-                    Explore our complete catalog of interactive programming courses.
+                    {isEnglish
+                      ? "Explore our complete catalog of interactive programming courses."
+                      : "Humare sabhi interactive programming courses ka catalog dekhein."}
                   </p>
                 </div>
               </Link>
@@ -254,8 +300,8 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
           <div className="flex flex-col md:items-start items-center gap-4">
             <Link to="/" className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
-                <Code2 className="text-white" size={24} />
+              <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center shadow-lg shadow-white/10">
+                <Code2 className="text-[#282a36]" size={24} />
               </div>
               <span className="text-lg font-black tracking-widest uppercase font-outfit">SUMMERCODE</span>
             </Link>

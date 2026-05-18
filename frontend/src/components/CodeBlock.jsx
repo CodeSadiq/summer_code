@@ -120,7 +120,7 @@ export default function CodeBlock({ visibleText, language, stepIndex, audioDurat
       while ((match = regex.exec(sourceCode)) !== null) {
         prompts.push(match[1]);
       }
-      
+
       // Fallback: if no printf+scanf pairs found, check for single scanf
       if (prompts.length === 0) {
         if (sourceCode.search(/(scanf|cin|gets|fgets)/) !== -1) {
@@ -168,7 +168,7 @@ export default function CodeBlock({ visibleText, language, stepIndex, audioDurat
       setCurrentPromptIndex(0);
       setTerminalStep('PROMPTING');
       setCurrentPrompt(prompts[0]);
-      setTerminalLines([{ type: 'prompt', text: prompts[0] }]);
+      setTerminalLines([]); // Start with empty history, the prompt is shown by the active input block
       return;
     }
 
@@ -180,14 +180,13 @@ export default function CodeBlock({ visibleText, language, stepIndex, audioDurat
     const val = currentInput;
     const newCollected = [...collectedInputs, val];
     setCollectedInputs(newCollected);
-    setTerminalLines(prev => [...prev, { type: 'input', text: val }]);
+    setTerminalLines(prev => [...prev, { type: 'input', text: val, prompt: currentPrompt }]);
     setCurrentInput('');
 
     if (currentPromptIndex < allPrompts.length - 1) {
       const nextIdx = currentPromptIndex + 1;
       setCurrentPromptIndex(nextIdx);
       setCurrentPrompt(allPrompts[nextIdx]);
-      setTerminalLines(prev => [...prev, { type: 'prompt', text: allPrompts[nextIdx] }]);
     } else {
       setTerminalStep('EXECUTING');
       // Combine all inputs with newlines for the backend
@@ -208,7 +207,7 @@ export default function CodeBlock({ visibleText, language, stepIndex, audioDurat
 
       const rawOutput = data.output || (data.error ? 'Execution failed.' : 'No output generated.');
       let cleanOutput = rawOutput;
-      
+
       // Remove all prompts from the output to avoid double-printing
       // since our terminal already printed them during the interactive phase.
       allPrompts.forEach(p => {
@@ -261,9 +260,9 @@ export default function CodeBlock({ visibleText, language, stepIndex, audioDurat
           <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">EDITOR.{language}</span>
           <div className="flex items-center gap-3">
             {stepIndex !== -1 && (
-              <button 
-                onClick={() => navigate('/playground', { state: { code, language } })} 
-                title="Open in Playground" 
+              <button
+                onClick={() => navigate('/playground', { state: { code, language } })}
+                title="Open in Playground"
                 className="text-slate-500 hover:text-white transition-colors"
               >
                 <Maximize2 size={14} />
@@ -360,55 +359,59 @@ export default function CodeBlock({ visibleText, language, stepIndex, audioDurat
                       };
                     })();
                   </script>
-                  ${language === 'html' 
-                    ? code 
-                    : `<script type="text/javascript">
+                  ${language === 'html'
+                  ? code
+                  : `<script type="text/javascript">
                         try {
                           ${code.replace(/<\/script>/gi, '<\\/script>')}
                         } catch(e) {
                           console.log('Runtime Error: ' + e.message);
                         }
                       </script>`
-                  }
+                }
                 </body>
               </html>`}
               title="preview" className="w-full h-full border-0"
             />
           ) : (
-            <div className="font-mono text-sm leading-relaxed whitespace-pre-wrap">
-              {terminalLines.map((line, i) => {
-                const isLatestPrompt = i === terminalLines.length - 1 && line.type === 'prompt' && terminalStep === 'PROMPTING';
+            <div className="font-mono text-sm leading-relaxed">
+              {terminalLines.map((line, i) => (
+                <div key={i} className="mb-1 whitespace-nowrap">
+                  {line.type === 'input' && (
+                    <div className="flex gap-0 whitespace-nowrap">
+                      <span className="text-slate-900 whitespace-nowrap">{line.prompt}</span>
+                      <span className="text-slate-900 whitespace-nowrap">{line.text}</span>
+                    </div>
+                  )}
+                  {line.type === 'output' && (
+                    <div className="text-slate-900 whitespace-pre-wrap">{line.text}</div>
+                  )}
+                  {line.type === 'error' && (
+                    <div className="text-red-600 whitespace-pre-wrap">{line.text}</div>
+                  )}
+                </div>
+              ))}
 
-                return (
-                  <span key={i} className={clsx(
-                    line.type === 'prompt' ? "text-slate-800" :
-                      line.type === 'input' ? "text-blue-600 font-bold ml-1" :
-                        line.type === 'error' ? "text-red-600 block" : "text-slate-800 block"
-                  )}>
-                    {line.text}
-                    {isLatestPrompt && (
-                      <input
-                        ref={inputRef}
-                        autoFocus
-                        type="text"
-                        value={currentInput}
-                        onChange={e => setCurrentInput(e.target.value)}
-                        onKeyDown={handleInputSubmit}
-                        className="bg-transparent border-none outline-none text-blue-600 font-bold inline-block ml-1 caret-blue-600 min-w-[20px]"
-                        style={{ width: `${Math.max(2, currentInput.length)}ch` }}
-                      />
-                    )}
-                    {(line.type === 'output' || line.type === 'error' || (line.type === 'input')) && <br />}
-                  </span>
-                );
-              })}
+              {terminalStep === 'PROMPTING' && (
+                <div className="flex gap-0 mt-1 items-center">
+                  <span className="text-slate-900 whitespace-nowrap">{currentPrompt}</span>
+                  <input
+                    ref={inputRef}
+                    autoFocus
+                    type="text"
+                    value={currentInput}
+                    onChange={e => setCurrentInput(e.target.value)}
+                    onKeyDown={handleInputSubmit}
+                    className="flex-1 bg-transparent border-0 outline-none text-slate-900 p-0 h-auto font-mono text-sm caret-slate-900"
+                  />
+                </div>
+              )}
 
               {terminalStep === 'EXECUTING' && (
                 <div className="flex items-center gap-2 text-blue-500 animate-pulse text-xs mt-1">
                   <Loader2 className="animate-spin" size={14} /> Executing...
                 </div>
               )}
-              <div className="h-4" />
             </div>
           )}
         </div>

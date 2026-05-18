@@ -17,8 +17,8 @@ export default function Sidebar({ collapsed, setCollapsed }) {
   // Pulling 'isSidebarOpen' to handle mobile "drawer" behavior
   const { isSidebarOpen, setIsSidebarOpen } = useTeachingState();
   const [lessons, setLessons] = useState([]); // All lessons from DB
-  const [topics, setTopics] = useState([]);   // All course topics (e.g., HTML, Python)
-  const { slug, courseId, topicId } = useParams(); // Current lesson ID or practice course from URL
+  const [courses, setCourses] = useState([]);   // All courses (e.g., HTML, Python)
+  const { slug, courseId, chapterId } = useParams(); // Current lesson ID or practice course from URL
   const location = useLocation();
   const navigate = useNavigate();
   const isPracticePage = location.pathname.startsWith('/practice/');
@@ -31,10 +31,10 @@ export default function Sidebar({ collapsed, setCollapsed }) {
         if (Array.isArray(data)) setLessons(data);
       });
 
-    fetch(`${API_URL}/api/topics`, { cache: 'no-store' })
+    fetch(`${API_URL}/api/courses`, { cache: 'no-store' })
       .then(res => res.json())
       .then(data => {
-        if (Array.isArray(data)) setTopics(data);
+        if (Array.isArray(data)) setCourses(data);
       });
   }, [slug]);
 
@@ -46,7 +46,7 @@ export default function Sidebar({ collapsed, setCollapsed }) {
 
   // Filter lessons to only show the ones belonging to the current course
   const currentLesson = lessons.find(l => l.slug === slug);
-  const currentCourse = currentLesson?.course || (courseId === 'Course' ? topicId : courseId) || (lessons.length > 0 ? lessons[0].course : 'HTML');
+  const currentCourse = currentLesson?.course || (courseId === 'Course' ? chapterId : courseId) || (lessons.length > 0 ? lessons[0].course : 'HTML');
   const filteredLessons = lessons
     .filter(l => l.course === currentCourse)
     .sort((a, b) => (a.chapterOrder || 0) - (b.chapterOrder || 0));
@@ -106,7 +106,7 @@ export default function Sidebar({ collapsed, setCollapsed }) {
                 "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all",
                 (collapsed && !isSidebarOpen) ? "justify-center" : "",
                 // If this link matches the current URL (either as a lesson or as the current practice topic)
-                (isActive || (isPracticePage && topicId === lesson.slug))
+                (isActive || (isPracticePage && chapterId === lesson.slug))
                   ? (isPracticePage ? "bg-slate-700 text-white font-bold" : "bg-slate-100 text-slate-900 font-bold")
                   : (isPracticePage ? "text-slate-300 hover:bg-slate-800" : "text-slate-600 hover:bg-slate-50")
               )}

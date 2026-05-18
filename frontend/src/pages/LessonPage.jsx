@@ -60,7 +60,7 @@ export default function LessonPage() {
   const {
     isActive, currentStep, isAdminMode,
     setIsSpeaking, mode, isPaused,
-    setActiveLesson, continueTeaching, activeLesson, jumpToStep,
+    setActiveLesson, startTeaching, continueTeaching, activeLesson, jumpToStep,
     isEnglish, setIsEnglish, isSidebarCollapsed
   } = useTeachingState();
 
@@ -113,12 +113,12 @@ export default function LessonPage() {
    */
   useEffect(() => {
     setLoading(true);
+    setLesson(null);
     fetch(`${API_URL}/api/lessons/${slug}`, { cache: 'no-store' })
       .then(res => res.json())
       .then(data => {
         if (!data.error) {
           setLesson(data);
-          setActiveLesson(data);
         }
       })
       .catch(err => console.error(err))
@@ -145,7 +145,8 @@ export default function LessonPage() {
           }
         });
     }
-  }, [slug, setActiveLesson]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [slug]);
 
   // Logic to find Previous and Next lessons for the footer
   const courseLessons = lessons
@@ -240,7 +241,7 @@ export default function LessonPage() {
 
   return (
     <div className={clsx(
-      "p-8 pt-12 md:p-16 relative w-full transition-all duration-500",
+      "p-8 pt-12 md:p-16 relative w-full",
       isSidebarCollapsed ? "max-w-[1400px]" : "max-w-5xl",
       "mx-auto"
     )}>
@@ -252,19 +253,21 @@ export default function LessonPage() {
             CHAPTER {String(lesson.chapterOrder || (currentIdx + 1)).padStart(2, '0')}
           </span>
 
-          {/* Language Switcher: Toggle between English and Hinglish */}
-          <button
-            onClick={() => setIsEnglish(!isEnglish)}
-            className={clsx(
-              "flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 border-2",
-              isEnglish
-                ? "bg-blue-50 border-blue-200 text-blue-600"
-                : "bg-emerald-50 border-emerald-200 text-emerald-600"
-            )}
-          >
-            <Sparkles size={12} className={isEnglish ? "text-blue-400" : "text-emerald-400"} />
-            {isEnglish ? "English Mode" : "Hinglish Mode"}
-          </button>
+          <div className="flex items-center gap-3">
+            {/* Start Guided Teaching Button */}
+            <button
+              onClick={!isActive ? () => startTeaching(activeLesson) : undefined}
+              className={clsx(
+                "hidden md:flex items-center gap-2 rounded-xl px-4 py-2 text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 border-2",
+                isActive
+                  ? "bg-slate-100 text-slate-400 border-slate-200 cursor-default"
+                  : "bg-slate-900 text-white border-slate-900 hover:bg-slate-800 shadow-sm"
+              )}
+            >
+              <Sparkles size={12} className={clsx(isActive ? "text-slate-300" : "text-yellow-400")} />
+              <span>{isActive ? "Teaching Active" : "Start Guided Teaching"}</span>
+            </button>
+          </div>
         </div>
 
         {/* Lesson Main Title */}

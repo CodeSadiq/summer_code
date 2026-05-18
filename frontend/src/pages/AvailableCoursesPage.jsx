@@ -2,17 +2,19 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Code2, ArrowRight, Layers } from 'lucide-react';
 import { API_URL } from '../config';
+import { useTeachingState } from '../contexts/TeachingContext';
 
 export default function AvailableCoursesPage() {
-  const [topics, setTopics] = useState([]);
+  const { isEnglish } = useTeachingState();
+  const [courses, setCourses] = useState([]);
   const [lessons, setLessons] = useState([]);
 
   useEffect(() => {
-    fetch(`${API_URL}/api/topics`)
+    fetch(`${API_URL}/api/courses`)
       .then(r => r.json())
       .then(data => {
-        if (Array.isArray(data)) setTopics(data);
-        else setTopics([]);
+        if (Array.isArray(data)) setCourses(data);
+        else setCourses([]);
       })
       .catch(console.error);
 
@@ -25,8 +27,8 @@ export default function AvailableCoursesPage() {
       .catch(console.error);
   }, []);
 
-  const getFirstLessonSlug = (courseName) => {
-    const courseLessons = lessons.filter(l => l.course === courseName);
+  const getFirstLessonSlug = (courseId) => {
+    const courseLessons = lessons.filter(l => l.course === courseId);
     if (courseLessons.length > 0) {
       return courseLessons.sort((a, b) => (a.chapterOrder || 0) - (b.chapterOrder || 0))[0].slug;
     }
@@ -39,20 +41,25 @@ export default function AvailableCoursesPage() {
       {/* Hero Header */}
       <header className="pt-32 pb-20 px-6 text-left max-w-7xl mx-auto w-full">
         <h1 className="text-4xl md:text-5xl font-bold text-slate-900 mb-4">
-          Explore Our Courses
+          {isEnglish ? "Explore All Courses" : "Sabhi Courses Dekhein"}
         </h1>
         <p className="text-lg text-slate-500 max-w-2xl font-medium">
-          Coding ab Hinglish mein! Hamare expert-led courses ke saath apni programming journey aaj hi shuru karein.
+          {isEnglish 
+            ? "Explore our complete catalog of interactive programming courses." 
+            : "Humare sabhi interactive programming courses ka catalog dekhein."}
         </p>
       </header>
 
       {/* Main Grid */}
       <main className="flex-1 max-w-7xl mx-auto px-6 pb-32 w-full">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-          {topics.map((course) => {
-            const firstSlug = getFirstLessonSlug(course.name);
+          {courses.map((course) => {
+            const firstSlug = getFirstLessonSlug(course.id);
             const isActive = course.status === 'Active' && firstSlug;
-            const description = course.description || `Master the essentials of ${course.name} from scratch with hands-on practice.`;
+            const fallbackDesc = isEnglish 
+              ? `Master the essentials of ${course.name} from scratch with hands-on practice.`
+              : `${course.name} ko scratch se seekhein, hands-on practice ke saath.`;
+            const description = isEnglish ? (course.englishDescription || course.description || fallbackDesc) : (course.description || fallbackDesc);
             
             return (
               <div key={course.id || course.name} className={`h-full ${!isActive ? 'opacity-75' : ''}`}>
@@ -82,13 +89,13 @@ export default function AvailableCoursesPage() {
                       </div>
                       
                       {isActive ? (
-                        <span className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-600 rounded-full text-[10px] font-black uppercase tracking-widest border border-emerald-100">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                          Active
+                        <span className="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-emerald-500">
+                          <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+                          {isEnglish ? "Active" : "Shuru Hai"}
                         </span>
                       ) : (
-                        <span className="px-3 py-1.5 bg-slate-200 text-slate-500 rounded-full text-[10px] font-black uppercase tracking-widest border border-slate-300">
-                          Coming Soon
+                        <span className="text-[11px] font-black uppercase tracking-widest text-slate-400">
+                          {isEnglish ? "Coming Soon" : "Jald Aa Raha Hai"}
                         </span>
                       )}
                     </div>
@@ -102,7 +109,7 @@ export default function AvailableCoursesPage() {
 
                     <div className="flex items-center justify-between pt-10 border-t border-slate-200/50">
                       <div className={`text-[10px] font-black uppercase tracking-[0.2em] ${isActive ? 'text-slate-400' : 'text-slate-300'}`}>
-                        {lessons.filter(l => l.course === course.name).length} Chapters
+                        {lessons.filter(l => l.course === course.id).length} Chapters
                       </div>
                       <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-transform shadow-lg ${isActive ? 'bg-slate-900 text-white group-hover:translate-x-2' : 'bg-slate-200 text-slate-400'}`}>
                         <ArrowRight size={18} />
@@ -121,8 +128,8 @@ export default function AvailableCoursesPage() {
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
           <div className="flex flex-col md:items-start items-center gap-4">
             <Link to="/" className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
-                <Code2 className="text-white" size={24} />
+              <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center shadow-lg shadow-white/10">
+                <Code2 className="text-[#282a36]" size={24} />
               </div>
               <span className="text-lg font-black tracking-widest uppercase font-outfit">SUMMERCODE</span>
             </Link>

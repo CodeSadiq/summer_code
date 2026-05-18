@@ -76,13 +76,15 @@ mongoose.connect(process.env.MONGODB_URI, {
 // A Schema defines the "shape" of the data. It's like a blueprint for a house.
 // A Model is a class that allows us to interact with the database using that blueprint.
 
-// Topic Schema: Stores information about different subjects (e.g., Python, C++, Web Dev).
-const topicSchema = new mongoose.Schema({
-  id: String,                         // Unique ID for the topic
+// Course Schema: Stores information about different subjects (e.g., HTML, CSS, C Programming).
+const courseSchema = new mongoose.Schema({
+  id: String,                         // Unique ID for the course (e.g., 'HTML')
   name: String,                       // Display name
-  subtitle: String,                   // Short tagline
-  icon: String,                       // Icon name (e.g., 'python', 'code')
-  description: String,                // Detailed description
+  subtitle: String,                   // Short tagline (Hinglish)
+  englishSubtitle: String,            // Short tagline (English)
+  icon: String,                       // Icon name (e.g., 'layout', 'code')
+  description: String,                // Detailed description (Hinglish/Default)
+  englishDescription: String,         // Detailed description in English
   status: String,                     // Current status (e.g., 'active', 'coming_soon')
   orderIndex: Number,                 // Custom order for display on landing page
 }, { timestamps: true });              // Automatically adds 'createdAt' and 'updatedAt' fields.
@@ -92,7 +94,7 @@ const lessonSchema = new mongoose.Schema({
   id: String,
   title: String,                      // Lesson title
   slug: { type: String, unique: true }, // URL-friendly name (e.g., 'intro-to-python')
-  course: String,                     // Which topic this lesson belongs to
+  course: String,                     // Which course ID this lesson belongs to (e.g. "HTML")
   chapterOrder: Number,               // Position in the course (1, 2, 3...)
   description: String,
   blocks: [Object],                   // Array of content blocks (text, video, code, etc.)
@@ -115,7 +117,7 @@ const userSchema = new mongoose.Schema({
 
 // Question Schema: Stores practice/quiz questions for the adaptive practice system.
 const questionSchema = new mongoose.Schema({
-  topicId: String,                    // Link to a specific Topic
+  courseId: String,                   // Link to a specific Course
   lessonId: String,                   // Link to a specific Lesson (Chapter)
   type: { type: String, enum: ['mcq', 'output', 'debug', 'coding'] }, // Type of question
   question: String,
@@ -134,15 +136,15 @@ const questionSchema = new mongoose.Schema({
 // Progress Schema: Tracks user performance in practice sessions.
 const progressSchema = new mongoose.Schema({
   userId: String,
-  topicId: String,
+  courseId: String,
   score: Number,                      // Score achieved (0-100)
   attempts: { type: Number, default: 0 },
   completedAt: { type: Date, default: Date.now }
 });
 
 // Creating Models from Schemas
-// These allow us to do things like Topic.find() or Lesson.create()
-const Topic = mongoose.model('Topic', topicSchema);
+// These allow us to do things like Course.find() or Lesson.create()
+const Course = mongoose.model('Course', courseSchema);
 const Lesson = mongoose.model('Lesson', lessonSchema);
 const AudioFile = mongoose.model('AudioFile', audioFileSchema);
 const User = mongoose.model('User', userSchema);
@@ -380,7 +382,7 @@ app.post('/api/admin/upload-audio', upload.single('audio'), async (req, res) => 
 // Get All Lessons
 app.get('/api/lessons', async (req, res) => {
   try {
-    const lessons = await Lesson.find({}, 'title slug course chapterOrder topicId').sort({ chapterOrder: 1 });
+    const lessons = await Lesson.find({}, 'title slug course chapterOrder courseId').sort({ chapterOrder: 1 });
     res.json(lessons);
   } catch (error) {
     res.status(500).json({ error: 'Failed to load lessons' });
@@ -423,38 +425,38 @@ app.delete('/api/admin/delete-lesson/:slug', async (req, res) => {
   }
 });
 
-// Get All Topics
-app.get('/api/topics', async (req, res) => {
+// Get All Courses
+app.get('/api/courses', async (req, res) => {
   try {
-    const topics = await Topic.find().sort({ orderIndex: 1 });
-    res.json(topics);
+    const courses = await Course.find().sort({ orderIndex: 1 });
+    res.json(courses);
   } catch (error) {
-    res.status(500).json({ error: 'Failed to load topics' });
+    res.status(500).json({ error: 'Failed to load courses' });
   }
 });
 
-// Save or Update Topic
-app.post('/api/admin/save-topic', async (req, res) => {
+// Save or Update Course
+app.post('/api/admin/save-course', async (req, res) => {
   try {
-    const newTopicData = req.body;
-    const topic = await Topic.findOneAndUpdate(
-      { id: newTopicData.id },
-      newTopicData,
+    const newCourseData = req.body;
+    const course = await Course.findOneAndUpdate(
+      { id: newCourseData.id },
+      newCourseData,
       { upsert: true, new: true }
     );
-    res.json({ success: true, topic });
+    res.json({ success: true, course });
   } catch (error) {
-    res.status(500).json({ error: 'Failed to save topic' });
+    res.status(500).json({ error: 'Failed to save course' });
   }
 });
 
-// Delete Topic
-app.delete('/api/admin/delete-topic/:topicId', async (req, res) => {
+// Delete Course
+app.delete('/api/admin/delete-course/:courseId', async (req, res) => {
   try {
-    await Topic.deleteOne({ id: req.params.topicId });
+    await Course.deleteOne({ id: req.params.courseId });
     res.json({ success: true });
   } catch (error) {
-    res.status(500).json({ error: 'Failed to delete topic' });
+    res.status(500).json({ error: 'Failed to delete course' });
   }
 });
 
@@ -586,10 +588,10 @@ app.post('/api/execute', async (req, res) => {
 // Get Questions for Student (Adaptive Difficulty)
 // This logic picks questions based on the user's past performance.
 app.get('/api/practice', async (req, res) => {
-  const { topicId, userId } = req.query;
+  const { courseId, userId } = req.query;
   try {
     // 1. Check user's previous performance to decide difficulty
-    const lastProgress = await Progress.findOne({ userId, topicId }).sort({ completedAt: -1 });
+    const lastProgress = await Progress.findOne({ userId, courseId }).sort({ completedAt: -1 });
 
     let targetDifficulty = 'easy';
     if (lastProgress) {
@@ -598,7 +600,7 @@ app.get('/api/practice', async (req, res) => {
     }
 
     // 2. Fetch questions for the target difficulty
-    const query = { topicId, difficulty: targetDifficulty };
+    const query = { courseId, difficulty: targetDifficulty };
     if (req.query.lessonId) query.lessonId = req.query.lessonId;
     
     let questions = await Question.find(query);
@@ -606,7 +608,7 @@ app.get('/api/practice', async (req, res) => {
     // 3. Fallback: if not enough questions in target difficulty, pull from others
     if (questions.length < 5) {
       const fallbackQuery = {
-        topicId,
+        courseId,
         difficulty: { $ne: targetDifficulty }
       };
       if (req.query.lessonId) fallbackQuery.lessonId = req.query.lessonId;
@@ -626,8 +628,8 @@ app.get('/api/practice', async (req, res) => {
 // Submit Practice Results
 app.post('/api/practice/submit', async (req, res) => {
   try {
-    const { userId, topicId, score } = req.body;
-    const progress = new Progress({ userId, topicId, score });
+    const { userId, courseId, score } = req.body;
+    const progress = new Progress({ userId, courseId, score });
     await progress.save();
     res.json({ success: true, message: 'Progress saved' });
   } catch (err) {
@@ -639,7 +641,7 @@ app.post('/api/practice/submit', async (req, res) => {
 app.get('/api/admin/practice', async (req, res) => {
   try {
     const filter = {};
-    if (req.query.topicId) filter.topicId = req.query.topicId;
+    if (req.query.courseId) filter.courseId = req.query.courseId;
     if (req.query.lessonId) filter.lessonId = req.query.lessonId;
     
     const questions = await Question.find(filter).sort({ createdAt: -1 });

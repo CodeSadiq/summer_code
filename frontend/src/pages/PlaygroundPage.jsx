@@ -39,6 +39,12 @@ export default function PlaygroundPage() {
   const [execError, setExecError] = useState(false);
   const [showLangMenu, setShowLangMenu] = useState(false);
   const [copyFeedback, setCopyFeedback] = useState(false);
+  const [terminalStep, setTerminalStep] = useState('IDLE'); // IDLE, PROMPTING, EXECUTING
+  const [currentInput, setCurrentInput] = useState('');
+  const [currentPrompt, setCurrentPrompt] = useState('');
+  const [allPrompts, setAllPrompts] = useState([]);
+  const [currentPromptIndex, setCurrentPromptIndex] = useState(0);
+  const [collectedInputs, setCollectedInputs] = useState([]);
 
   const isBrowserLang = ['html', 'css', 'javascript', 'js'].includes(language.toLowerCase());
   const terminalRef = useRef(null);
@@ -62,29 +68,105 @@ export default function PlaygroundPage() {
     return Prism.highlight(codeStr, lg, language);
   };
 
+  const detectPrompts = (sourceCode, lang) => {
+    const l = (lang || '').toLowerCase();
+    const prompts = [];
+    if (l === 'c' || l === 'cpp') {
+      const regex = /printf\s*\(\s*"([^"]*)"\s*\);?\s*(?:scanf|gets|fgets|cin)/g;
+      let match;
+      while ((match = regex.exec(sourceCode)) !== null) {
+        prompts.push(match[1]);
+      }
+      if (prompts.length === 0) {
+        if (sourceCode.search(/(scanf|cin|gets|fgets)/) !== -1) {
+          const firstPromptMatch = sourceCode.match(/"([^"]*)"/);
+          if (firstPromptMatch) prompts.push(firstPromptMatch[1]);
+        }
+      }
+    } else if (l === 'python') {
+      const regex = /input\s*\(\s*"([^"]*)"\s*\)/g;
+      let match;
+      while ((match = regex.exec(sourceCode)) !== null) {
+        prompts.push(match[1]);
+      }
+    }
+    return prompts;
+  };
+
   const handleRun = async () => {
-    setTerminalLines([{ type: 'info', text: `Starting ${language} execution...` }]);
+    setTerminalLines([]);
     setExecError(false);
     setIsRunning(true);
+    setCurrentInput('');
+    setCurrentPrompt('');
+    setCollectedInputs([]);
+    setCurrentPromptIndex(0);
 
     if (isBrowserLang) {
-      setTerminalLines(prev => [...prev, { type: 'success', text: 'Rendering preview in live container.' }]);
+      setTerminalLines([{ type: 'info', text: 'Rendering preview in live container.' }]);
+      setTerminalStep('EXECUTING');
       setIsRunning(false);
       return;
     }
 
+    const prompts = detectPrompts(code, language);
+    if (prompts.length > 0) {
+      setAllPrompts(prompts);
+      setCurrentPromptIndex(0);
+      setTerminalStep('PROMPTING');
+      setCurrentPrompt(prompts[0]);
+      setTerminalLines([]);
+      setIsRunning(false);
+      return;
+    }
+
+    setTerminalStep('EXECUTING');
+    await performExecution('');
+  };
+
+  const handleInputSubmit = async (e) => {
+    if (e.key !== 'Enter') return;
+    const val = currentInput;
+    const newCollected = [...collectedInputs, val];
+    setCollectedInputs(newCollected);
+    setTerminalLines(prev => [...prev, { type: 'input', text: val, prompt: currentPrompt }]);
+    setCurrentInput('');
+
+    if (currentPromptIndex < allPrompts.length - 1) {
+      const nextIdx = currentPromptIndex + 1;
+      setCurrentPromptIndex(nextIdx);
+      setCurrentPrompt(allPrompts[nextIdx]);
+    } else {
+      setTerminalStep('EXECUTING');
+      setIsRunning(true);
+      await performExecution(newCollected.join('\n'));
+      setIsRunning(false);
+    }
+  };
+
+  const performExecution = async (stdin) => {
     try {
       const res = await fetch(`${API_URL}/api/execute`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code, language })
+        body: JSON.stringify({ code, language, stdin })
       });
       const data = await res.json();
 
-      if (data.output) {
-        const lines = data.output.split('\n');
+      const rawOutput = data.output || (data.error ? 'Execution failed.' : 'No output generated.');
+      let cleanOutput = rawOutput;
+
+      allPrompts.forEach(p => {
+        if (cleanOutput.startsWith(p)) {
+          cleanOutput = cleanOutput.substring(p.length).trimStart();
+        }
+      });
+
+      if (cleanOutput) {
+        const lines = cleanOutput.split('\n');
         lines.forEach(l => setTerminalLines(prev => [...prev, { type: 'output', text: l }]));
       }
+
       if (data.error || !res.ok) {
         setTerminalLines(prev => [...prev, { type: 'error', text: data.error || 'Execution failed.' }]);
         setExecError(true);
@@ -93,7 +175,7 @@ export default function PlaygroundPage() {
       setTerminalLines(prev => [...prev, { type: 'error', text: 'Connection to engine failed.' }]);
       setExecError(true);
     } finally {
-      setIsRunning(false);
+      setTerminalStep('IDLE');
     }
   };
 
@@ -212,30 +294,53 @@ export default function PlaygroundPage() {
             )}
 
             {isBrowserLang ? (
+              // ... browser preview logic ...
               <div className="h-full flex flex-col gap-4">
                 <div className="text-[10px] font-black text-indigo-500/50 uppercase tracking-widest">Browser Runtime</div>
                 <iframe
-                  srcDoc={`<html>
-                    <body style="margin:0;padding:16px;color:#0f172a;font-family:monospace;background:white;font-size:12px;">
+                  srcDoc={`<!DOCTYPE html>
+                  <html>
+                    <head>
+                      <style>
+                        body { margin: 0; padding: 16px; color: #0f172a; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; background: white; font-size: 13px; line-height: 1.5; }
+                        #root { display: flex; flex-direction: column; gap: 4px; }
+                        .log-entry { padding: 4px 0; border-bottom: 1px solid #f1f5f9; white-space: pre-wrap; word-break: break-all; }
+                        .log-error { color: #ef4444; font-weight: bold; }
+                      </style>
+                    </head>
+                    <body>
                       <div id="root"></div>
                       <script>
-                        const root = document.getElementById('root');
-                        console.log = (...args) => {
-                          const div = document.createElement('div');
-                          div.style.padding = '2px 0';
-                          div.style.borderBottom = '1px solid #f1f5f9';
-                          div.innerText = '> ' + args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' ');
-                          root.appendChild(div);
-                        };
-                        try {
-                          ${language === 'javascript' || language === 'js' ? code : `root.innerHTML = \`${code.replace(/`/g, '\\`').replace(/\${/g, '\\${')}\``}
-                        } catch(e) {
-                          const div = document.createElement('div');
-                          div.style.color = '#ef4444';
-                          div.innerText = 'Error: ' + e.message;
-                          root.appendChild(div);
-                        }
+                        (function() {
+                          const root = document.getElementById('root');
+                          const originalLog = console.log;
+                          console.log = (...args) => {
+                            const div = document.createElement('div');
+                            div.className = 'log-entry';
+                            div.innerText = args.map(a => 
+                              typeof a === 'object' ? JSON.stringify(a) : String(a)
+                            ).join(' ');
+                            root.appendChild(div);
+                            originalLog.apply(console, args);
+                          };
+                          window.onerror = (msg, url, line, col, error) => {
+                            const div = document.createElement('div');
+                            div.className = 'log-entry log-error';
+                            div.innerText = 'Error: ' + msg + (line ? ' (line ' + line + ')' : '');
+                            root.appendChild(div);
+                          };
+                        })();
                       </script>
+                      ${['html', 'css'].includes(language) 
+                        ? code 
+                        : `<script type="text/javascript">
+                            try {
+                              ${code.replace(/<\/script>/gi, '<\\/script>')}
+                            } catch(e) {
+                              console.log('Runtime Error: ' + e.message);
+                            }
+                          </script>`
+                      }
                     </body>
                   </html>`}
                   title="preview" className="w-full h-full border border-slate-100 rounded-xl bg-white shadow-inner"
@@ -248,12 +353,39 @@ export default function PlaygroundPage() {
                     "flex gap-2",
                     line.type === 'error' ? "text-rose-600" :
                       line.type === 'success' ? "text-emerald-600" :
-                        line.type === 'info' ? "text-indigo-600" : "text-slate-800"
+                        line.type === 'info' ? "text-indigo-600" : "text-slate-900"
                   )}>
                     <span className="opacity-30">[{i + 1}]</span>
-                    <span>{line.text}</span>
+                    {line.type === 'input' ? (
+                      <div className="flex gap-0 whitespace-nowrap">
+                        <span className="text-slate-900 whitespace-nowrap">{line.prompt}</span>
+                        <span className="text-slate-900">{line.text}</span>
+                      </div>
+                    ) : (
+                      <span className="whitespace-pre-wrap">{line.text}</span>
+                    )}
                   </div>
                 ))}
+                
+                {terminalStep === 'PROMPTING' && (
+                  <div className="flex gap-0 mt-1 pl-6 items-center">
+                    <span className="text-slate-900 whitespace-nowrap">{currentPrompt}</span>
+                    <input
+                      autoFocus
+                      type="text"
+                      value={currentInput}
+                      onChange={e => setCurrentInput(e.target.value)}
+                      onKeyDown={handleInputSubmit}
+                      className="flex-1 bg-transparent border-0 outline-none text-slate-900 p-0 h-auto font-mono text-xs caret-slate-900"
+                    />
+                  </div>
+                )}
+
+                {terminalStep === 'EXECUTING' && (
+                  <div className="flex items-center gap-2 text-indigo-500 animate-pulse text-[10px] font-bold uppercase tracking-widest pl-6 mt-2">
+                    <Loader2 className="animate-spin" size={12} /> Executing...
+                  </div>
+                )}
               </div>
             )}
           </div>

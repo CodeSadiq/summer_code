@@ -1,6 +1,5 @@
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
-
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -9,20 +8,13 @@ const __dirname = path.dirname(__filename);
 
 dotenv.config({ path: path.join(__dirname, '../.env') });
 
-const lessonSchema = new mongoose.Schema({
-  title: String,
-  slug: String,
-  course: String,
-  topicId: String,
-  chapterOrder: Number,
-});
-
-const Lesson = mongoose.model('Lesson', lessonSchema);
-
 async function check() {
   await mongoose.connect(process.env.MONGODB_URI);
-  const lessons = await Lesson.find({ course: 'HTML' }).sort({ chapterOrder: 1 });
-  console.log(JSON.stringify(lessons, null, 2));
+  const Question = mongoose.model('Question', new mongoose.Schema({ topicId: String }));
+  const counts = await Question.aggregate([
+    { $group: { _id: '$topicId', count: { $sum: 1 } } }
+  ]);
+  console.log('Question counts by Topic:', counts);
   process.exit(0);
 }
 

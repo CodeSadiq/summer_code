@@ -52,7 +52,7 @@ function App() {
           <Route path="/lessons/:slug" element={<MainLayout><LessonPage /></MainLayout>} />
           <Route path="/playground" element={<PlaygroundPage />} />
           <Route path="/practice" element={<PublicLayout><PracticeHub /></PublicLayout>} />
-          <Route path="/practice/:courseId/:topicId" element={<MainLayout><PracticePage /></MainLayout>} />
+          <Route path="/practice/:courseId/:chapterId" element={<MainLayout><PracticePage /></MainLayout>} />
 
           {/* Admin Routes: Protected by the ProtectedRoute component */}
           <Route path="/admin" element={
@@ -65,17 +65,17 @@ function App() {
               <AdminPractice />
             </ProtectedRoute>
           } />
-          <Route path="/admin/practice/:topicId" element={
+          <Route path="/admin/practice/:courseId" element={
             <ProtectedRoute>
               <AdminPractice />
             </ProtectedRoute>
           } />
-          <Route path="/admin/practice/:topicId/add" element={
+          <Route path="/admin/practice/:courseId/add" element={
             <ProtectedRoute>
               <AdminPractice />
             </ProtectedRoute>
           } />
-          <Route path="/admin/practice/:topicId/edit/:questionId" element={
+          <Route path="/admin/practice/:courseId/edit/:questionId" element={
             <ProtectedRoute>
               <AdminPractice />
             </ProtectedRoute>

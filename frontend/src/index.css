@@ -133,14 +133,45 @@
 
 /* --- Animations --- */
 @keyframes speak {
-  0% { height: 4px; border-radius: 4px; }
-  10% { height: 16px; border-radius: 12px; }
-  20% { height: 6px; border-radius: 6px; }
-  35% { height: 20px; border-radius: 14px; }
-  50% { height: 8px; border-radius: 8px; }
-  65% { height: 18px; border-radius: 12px; }
-  80% { height: 10px; border-radius: 8px; }
-  100% { height: 4px; border-radius: 4px; }
+  0% {
+    height: 4px;
+    border-radius: 4px;
+  }
+
+  10% {
+    height: 16px;
+    border-radius: 12px;
+  }
+
+  20% {
+    height: 6px;
+    border-radius: 6px;
+  }
+
+  35% {
+    height: 20px;
+    border-radius: 14px;
+  }
+
+  50% {
+    height: 8px;
+    border-radius: 8px;
+  }
+
+  65% {
+    height: 18px;
+    border-radius: 12px;
+  }
+
+  80% {
+    height: 10px;
+    border-radius: 8px;
+  }
+
+  100% {
+    height: 4px;
+    border-radius: 4px;
+  }
 }
 
 .animate-speak {
@@ -148,8 +179,15 @@
 }
 
 @keyframes wave {
-  0%, 100% { height: 4px; }
-  50% { height: 16px; }
+
+  0%,
+  100% {
+    height: 4px;
+  }
+
+  50% {
+    height: 16px;
+  }
 }
 
 .animate-wave {
@@ -157,8 +195,15 @@
 }
 
 @keyframes entrance {
-  from { opacity: 0; transform: translateY(20px) scale(0.95); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .animate-entrance {
@@ -166,8 +211,15 @@
 }
 
 @keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-10px); }
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-10px);
+  }
 }
 
 .animate-float {
@@ -175,8 +227,13 @@
 }
 
 @keyframes shine {
-  0% { left: -100%; }
-  100% { left: 100%; }
+  0% {
+    left: -100%;
+  }
+
+  100% {
+    left: 100%;
+  }
 }
 
 .animate-shine {
@@ -197,8 +254,15 @@
 }
 
 @keyframes pop-in {
-  0% { transform: scale(0.9); opacity: 0; }
-  100% { transform: scale(1); opacity: 1; }
+  0% {
+    transform: scale(0.9);
+    opacity: 0;
+  }
+
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 
 .animate-pop-in {
